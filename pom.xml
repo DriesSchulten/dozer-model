@@ -7,8 +7,7 @@
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
-	<name>dozer</name>
-	<url>http://maven.apache.org</url>
+	<name>Wicket dozer Hibernate model</name>
 
 	<build>
 		<resources>
@@ -84,8 +83,15 @@
 		</dependency>
 		
 		<dependency>
+			<groupId>org.javassist</groupId>
+			<artifactId>javassist</artifactId>
+			<version>3.15.0-GA</version>
+			<scope>provided</scope>
+		</dependency>
+		
+		<dependency>
 			<groupId>ch.qos.logback</groupId>
-			<artifactId>logback-core</artifactId>
+			<artifactId>logback-classic</artifactId>
 			<version>1.0.0</version>
 			<scope>test</scope>
 		</dependency>
@@ -94,6 +100,13 @@
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
 			<version>4.10</version>
+			<scope>test</scope>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.hsqldb</groupId>
+			<artifactId>hsqldb</artifactId>
+			<version>2.2.6</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

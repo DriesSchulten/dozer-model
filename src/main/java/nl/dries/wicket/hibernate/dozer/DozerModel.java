@@ -1,22 +1,25 @@
 package nl.dries.wicket.hibernate.dozer;
 
-import java.io.Serializable;
-import java.lang.reflect.ParameterizedType;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+
+import nl.dries.wicket.hibernate.dozer.helper.HibernateFieldMapper;
+import nl.dries.wicket.hibernate.dozer.helper.HibernateProperty;
+import nl.dries.wicket.hibernate.dozer.helper.PropertyDefinition;
 
 import org.apache.wicket.model.IModel;
 import org.dozer.DozerBeanMapper;
 import org.dozer.Mapper;
+import org.hibernate.Hibernate;
 
 /**
  * @author dries
  * 
  * @param <T>
  *            type of model object
- * @param <S>
- *            object to stop traversing object tree (to prevent storing entire db in model), when not needed pass
- *            {@link java.lang.Void}
  */
-public class DozerModel<T, S extends Serializable> implements IModel<T>
+public class DozerModel<T> implements IModel<T>
 {
 	/** Default */
 	private static final long serialVersionUID = 1L;
@@ -30,33 +33,26 @@ public class DozerModel<T, S extends Serializable> implements IModel<T>
 	/** The object's {@link Class} */
 	private Class<T> objectClass;
 
-	/** Stop */
-	private StopProperty<S> stop;
+	/** Map containing detached collections */
+	private Map<PropertyDefinition, Collection<HibernateProperty>> detachedCollections;
+
+	/** Map containing detached properties */
+	private Map<PropertyDefinition, HibernateProperty> detachedProperties;
 
 	/**
 	 * Construct
 	 * 
 	 * @param object
-	 */
-	public DozerModel(T object)
-	{
-		this(object, null);
-	}
-
-	/**
-	 * Construct
-	 * 
-	 * @param object
-	 * @param stop
-	 *            the {@link StopProperty}
 	 */
 	@SuppressWarnings("unchecked")
-	public DozerModel(T object, StopProperty<S> stop)
+	public DozerModel(T object)
 	{
 		this.object = object;
-		this.stop = stop;
 
-		this.objectClass = (Class<T>) ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0];
+		if (object != null)
+		{
+			this.objectClass = Hibernate.getClass(object);
+		}
 	}
 
 	/**
@@ -69,7 +65,11 @@ public class DozerModel<T, S extends Serializable> implements IModel<T>
 		if (object == null && detachedObject != null)
 		{
 			object = detachedObject;
+
+			// Remove detached state
 			detachedObject = null;
+			detachedCollections = null;
+			detachedProperties = null;
 		}
 		return object;
 	}
@@ -92,12 +92,53 @@ public class DozerModel<T, S extends Serializable> implements IModel<T>
 		if (object != null && detachedObject == null)
 		{
 			detachedObject = createMapper().map(object, objectClass);
+			object = null;
 		}
 	}
 
+	/**
+	 * Add a detached collection
+	 * 
+	 * @param property
+	 *            the {@link PropertyDefinition} it maps to
+	 * @param collection
+	 *            the detached collection
+	 */
+	public void addDetachedCollection(PropertyDefinition property, Collection<HibernateProperty> collection)
+	{
+		if (detachedCollections == null)
+		{
+			detachedCollections = new HashMap<>();
+		}
+
+		detachedCollections.put(property, collection);
+	}
+
+	/**
+	 * Add a detached property
+	 * 
+	 * @param property
+	 *            the {@link PropertyDefinition}
+	 * @param value
+	 *            its value
+	 */
+	public void addDetachedProperty(PropertyDefinition property, HibernateProperty value)
+	{
+		if (detachedProperties == null)
+		{
+			detachedProperties = new HashMap<>();
+		}
+
+		detachedProperties.put(property, value);
+	}
+
+	/**
+	 * @return {@link Mapper} instance
+	 */
 	private Mapper createMapper()
 	{
-		Mapper mapper = new DozerBeanMapper();
+		DozerBeanMapper mapper = new DozerBeanMapper();
+		mapper.setCustomFieldMapper(new HibernateFieldMapper(this));
 		return mapper;
 	}
 }
