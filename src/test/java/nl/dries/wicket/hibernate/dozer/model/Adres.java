@@ -4,6 +4,7 @@ import java.io.Serializable;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 
@@ -25,7 +26,7 @@ public class Adres implements Serializable
 	private String street;
 
 	/** */
-	@ManyToOne
+	@ManyToOne(fetch = FetchType.LAZY)
 	private Person person;
 
 	/**
@@ -77,5 +78,74 @@ public class Adres implements Serializable
 	public void setPerson(Person person)
 	{
 		this.person = person;
+	}
+
+	/**
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((id == null) ? 0 : id.hashCode());
+		result = prime * result + ((person == null) ? 0 : person.hashCode());
+		result = prime * result + ((street == null) ? 0 : street.hashCode());
+		return result;
+	}
+
+	/**
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj)
+		{
+			return true;
+		}
+		if (obj == null)
+		{
+			return false;
+		}
+		if (getClass() != obj.getClass())
+		{
+			return false;
+		}
+		Adres other = (Adres) obj;
+		if (id == null)
+		{
+			if (other.id != null)
+			{
+				return false;
+			}
+		}
+		else if (!id.equals(other.id))
+		{
+			return false;
+		}
+		if (person == null)
+		{
+			if (other.person != null)
+			{
+				return false;
+			}
+		}
+		else if (!person.equals(other.person))
+		{
+			return false;
+		}
+		if (street == null)
+		{
+			if (other.street != null)
+			{
+				return false;
+			}
+		}
+		else if (!street.equals(other.street))
+		{
+			return false;
+		}
+		return true;
 	}
 }

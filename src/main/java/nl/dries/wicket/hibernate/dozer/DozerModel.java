@@ -4,11 +4,14 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import nl.dries.wicket.hibernate.dozer.helper.Attacher;
 import nl.dries.wicket.hibernate.dozer.helper.HibernateFieldMapper;
 import nl.dries.wicket.hibernate.dozer.helper.HibernateProperty;
 import nl.dries.wicket.hibernate.dozer.helper.PropertyDefinition;
 
+import org.apache.wicket.injection.Injector;
 import org.apache.wicket.model.IModel;
+import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.dozer.DozerBeanMapper;
 import org.dozer.Mapper;
 import org.hibernate.Hibernate;
@@ -39,6 +42,10 @@ public class DozerModel<T> implements IModel<T>
 	/** Map containing detached properties */
 	private Map<PropertyDefinition, HibernateProperty> detachedProperties;
 
+	/** */
+	@SpringBean
+	private SessionFinder sessionFinder;
+
 	/**
 	 * Construct
 	 * 
@@ -53,6 +60,8 @@ public class DozerModel<T> implements IModel<T>
 		{
 			this.objectClass = Hibernate.getClass(object);
 		}
+
+		Injector.get().inject(this);
 	}
 
 	/**
@@ -65,6 +74,9 @@ public class DozerModel<T> implements IModel<T>
 		if (object == null && detachedObject != null)
 		{
 			object = detachedObject;
+
+			// Re-attach properties
+			new Attacher<T>(object, sessionFinder.getSession(), detachedProperties).doAttach();
 
 			// Remove detached state
 			detachedObject = null;
@@ -91,7 +103,8 @@ public class DozerModel<T> implements IModel<T>
 	{
 		if (object != null && detachedObject == null)
 		{
-			detachedObject = createMapper().map(object, objectClass);
+			DozerBeanMapper mapper = createMapper();
+			detachedObject = mapper.map(object, objectClass);
 			object = null;
 		}
 	}
@@ -135,7 +148,7 @@ public class DozerModel<T> implements IModel<T>
 	/**
 	 * @return {@link Mapper} instance
 	 */
-	private Mapper createMapper()
+	private DozerBeanMapper createMapper()
 	{
 		DozerBeanMapper mapper = new DozerBeanMapper();
 		mapper.setCustomFieldMapper(new HibernateFieldMapper(this));

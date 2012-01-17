@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
@@ -27,7 +28,7 @@ public class Person implements Serializable
 	private String name;
 
 	/** */
-	@OneToMany(mappedBy = "person")
+	@OneToMany(mappedBy = "person", cascade = CascadeType.ALL)
 	private List<Adres> adresses = new ArrayList<>();
 
 	/**

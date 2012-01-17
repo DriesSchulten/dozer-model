@@ -32,6 +32,7 @@ public final class HibernateHelper
 		cfg.setProperty("hibernate.dialect", "org.hibernate.dialect.HSQLDialect");
 		cfg.setProperty("hibernate.show_sql", "true");
 		cfg.setProperty("hibernate.hbm2ddl.auto", "create");
+		cfg.setProperty("hibernate.current_session_context_class", "thread");
 
 		cfg.setProperty("hibernate.connection.driver_class", "org.hsqldb.jdbcDriver");
 		cfg.setProperty("hibernate.connection.url", "jdbc:hsqldb:mem:testdb");

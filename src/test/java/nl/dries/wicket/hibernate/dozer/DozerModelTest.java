@@ -1,6 +1,13 @@
 package nl.dries.wicket.hibernate.dozer;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+
+import java.io.Serializable;
+import java.util.Arrays;
+import java.util.List;
+
+import nl.dries.wicket.hibernate.dozer.model.Adres;
 import nl.dries.wicket.hibernate.dozer.model.Person;
 
 import org.junit.Test;
@@ -10,7 +17,7 @@ import org.junit.Test;
  * 
  * @author dries
  */
-public class DozerModelTest
+public class DozerModelTest extends AbstractWicketHibernateTest
 {
 	/**
 	 * Model ceate and get
@@ -20,7 +27,7 @@ public class DozerModelTest
 	{
 		Person person = new Person();
 
-		DozerModel<Person> model = new DozerModel<Person>(person);
+		DozerModel<Person> model = new DozerModel<>(person);
 
 		assertEquals(person, model.getObject());
 	}
@@ -34,9 +41,46 @@ public class DozerModelTest
 		Person person = new Person();
 		person.setId(1L);
 
-		DozerModel<Person> model = new DozerModel<Person>(person);
+		DozerModel<Person> model = new DozerModel<>(person);
 		model.detach();
 
 		assertEquals(person, model.getObject());
+		assertFalse(person == model.getObject()); // Different instance
+	}
+
+	/**
+	 * Detach with proxies
+	 */
+	@Test
+	public void testLoadedDetach()
+	{
+		Person person = new Person();
+		person.setId(1L);
+		person.setName("test");
+
+		Adres adres = new Adres();
+		adres.setId(1L);
+		adres.setStreet("street");
+		adres.setPerson(person);
+		person.getAdresses().add(adres);
+
+		getSession().saveOrUpdate(person);
+
+		DozerModel<Adres> model = new DozerModel<>(adres);
+		model.detach();
+
+		closeAndOpenSession();
+
+		assertEquals(adres, model.getObject());
+		assertEquals(person, model.getObject().getPerson());
+	}
+
+	/**
+	 * @see nl.dries.wicket.hibernate.dozer.AbstractWicketHibernateTest#getEntities()
+	 */
+	@Override
+	protected List<Class<? extends Serializable>> getEntities()
+	{
+		return Arrays.asList(Adres.class, Person.class);
 	}
 }
