@@ -2,6 +2,8 @@ package nl.dries.wicket.hibernate.dozer;
 
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.springframework.orm.hibernate3.SessionHolder;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
  * Mock Spring bean to implement {@link SessionFinder}
@@ -29,7 +31,7 @@ public class MockSessionFinder implements SessionFinder
 	@Override
 	public Session getSession()
 	{
-		return sessionFactory.getCurrentSession();
+		SessionHolder holder = (SessionHolder) TransactionSynchronizationManager.getResource(sessionFactory);
+		return holder.getSession();
 	}
-
 }

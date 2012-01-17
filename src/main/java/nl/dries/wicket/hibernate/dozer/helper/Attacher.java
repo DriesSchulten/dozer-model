@@ -4,8 +4,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import javax.persistence.Entity;
-
 import org.apache.commons.beanutils.PropertyUtils;
 import org.hibernate.EntityMode;
 import org.hibernate.Session;
@@ -134,7 +132,6 @@ public class Attacher<T>
 	protected EntityPersister getPersister(HibernateProperty val)
 	{
 		SessionFactoryImplementor factory = sessionImpl.getFactory();
-		Entity entity = val.getEntityClass().getAnnotation(Entity.class);
-		return factory.getEntityPersister(entity.name());
+		return factory.getEntityPersister(val.getEntityClass().getName());
 	}
 }

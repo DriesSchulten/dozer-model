@@ -4,7 +4,6 @@ import java.io.Serializable;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 
@@ -26,7 +25,7 @@ public class Adres implements Serializable
 	private String street;
 
 	/** */
-	@ManyToOne(fetch = FetchType.LAZY)
+	@ManyToOne
 	private Person person;
 
 	/**

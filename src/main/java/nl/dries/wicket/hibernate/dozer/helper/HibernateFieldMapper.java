@@ -1,6 +1,5 @@
 package nl.dries.wicket.hibernate.dozer.helper;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -56,29 +55,21 @@ public class HibernateFieldMapper implements CustomFieldMapper
 	{
 		if (!Hibernate.isInitialized(sourceFieldValue))
 		{
-			try
-			{
-				PropertyDefinition def = new PropertyDefinition((Class<? extends Serializable>)
-					Class.forName(fieldMapping.getSrcFieldType()), fieldMapping.getSrcFieldName());
+			PropertyDefinition def = new PropertyDefinition(null, fieldMapping.getSrcFieldName());
 
-				// Collection
-				if (sourceFieldValue instanceof PersistentCollection)
-				{
-					Collection<HibernateProperty> detached = detachCollection((PersistentCollection) sourceFieldValue);
-					model.addDetachedCollection(def, detached);
-				}
-				// Other
-				else
-				{
-					LazyInitializer initializer = ((HibernateProxy) sourceFieldValue).getHibernateLazyInitializer();
-					HibernateProperty property = new HibernateProperty(initializer.getPersistentClass(),
-						initializer.getIdentifier());
-					model.addDetachedProperty(def, property);
-				}
-			}
-			catch (ClassNotFoundException e)
+			// Collection
+			if (sourceFieldValue instanceof PersistentCollection)
 			{
-				LOG.debug("Class not found, should not happen", e);
+				Collection<HibernateProperty> detached = detachCollection((PersistentCollection) sourceFieldValue);
+				model.addDetachedCollection(def, detached);
+			}
+			// Other
+			else
+			{
+				LazyInitializer initializer = ((HibernateProxy) sourceFieldValue).getHibernateLazyInitializer();
+				HibernateProperty property = new HibernateProperty(initializer.getPersistentClass(),
+					initializer.getIdentifier());
+				model.addDetachedProperty(def, property);
 			}
 
 			destination = null;

@@ -65,11 +65,12 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 		person.getAdresses().add(adres);
 
 		getSession().saveOrUpdate(person);
+		getSession().flush();
+		getSession().clear();
 
+		adres.setPerson((Person) getSession().load(Person.class, 1L)); // Forcing proxy
 		DozerModel<Adres> model = new DozerModel<>(adres);
 		model.detach();
-
-		closeAndOpenSession();
 
 		assertEquals(adres, model.getObject());
 		assertEquals(person, model.getObject().getPerson());

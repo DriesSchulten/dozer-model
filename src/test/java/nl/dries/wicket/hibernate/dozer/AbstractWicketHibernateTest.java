@@ -11,6 +11,9 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.junit.After;
 import org.junit.Before;
+import org.springframework.orm.hibernate3.SessionFactoryUtils;
+import org.springframework.orm.hibernate3.SessionHolder;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
  * Hibernate/Wicket enabled base test class
@@ -34,6 +37,12 @@ public abstract class AbstractWicketHibernateTest
 	@Before
 	public void openSession()
 	{
+		if (!TransactionSynchronizationManager.hasResource(sessionFactory))
+		{
+			session = sessionFactory.openSession();
+			TransactionSynchronizationManager.bindResource(sessionFactory, new SessionHolder(session));
+		}
+
 		if (wicketTester == null)
 		{
 			ApplicationContextMock context = new ApplicationContextMock();
@@ -43,8 +52,6 @@ public abstract class AbstractWicketHibernateTest
 			new SpringComponentInjector(application, context);
 			wicketTester = new WicketTester(application);
 		}
-
-		session = sessionFactory.openSession();
 	}
 
 	/**
@@ -53,16 +60,9 @@ public abstract class AbstractWicketHibernateTest
 	@After
 	public void closeSession()
 	{
-		session.close();
-	}
-
-	/**
-	 * Close and open a new session
-	 */
-	protected void closeAndOpenSession()
-	{
-		session.close();
-		session = sessionFactory.openSession();
+		SessionHolder sessionHolder = (SessionHolder) TransactionSynchronizationManager
+			.unbindResource(sessionFactory);
+		SessionFactoryUtils.closeSession(sessionHolder.getSession());
 	}
 
 	/**
