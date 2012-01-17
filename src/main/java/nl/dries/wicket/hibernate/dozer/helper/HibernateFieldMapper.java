@@ -72,7 +72,7 @@ public class HibernateFieldMapper implements CustomFieldMapper
 					def.setType(CollectionType.LIST);
 				}
 
-				model.addDetachedCollection(def);
+				model.addDetachedProperty(destination, def);
 			}
 			// Other
 			else
@@ -80,10 +80,10 @@ public class HibernateFieldMapper implements CustomFieldMapper
 				LazyInitializer initializer = ((HibernateProxy) sourceFieldValue).getHibernateLazyInitializer();
 				HibernateProperty property = new HibernateProperty(initializer.getPersistentClass(),
 					initializer.getIdentifier());
-				model.addDetachedProperty(def, property);
+				def.setHibernateProperty(property);
+				model.addDetachedProperty(destination, def);
 			}
 
-			destination = null;
 			return true;
 		}
 

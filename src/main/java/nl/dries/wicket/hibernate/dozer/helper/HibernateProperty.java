@@ -104,4 +104,13 @@ public class HibernateProperty implements Serializable
 		}
 		return true;
 	}
+
+	/**
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString()
+	{
+		return "[" + entityClass.getName() + ":" + id + "]";
+	}
 }

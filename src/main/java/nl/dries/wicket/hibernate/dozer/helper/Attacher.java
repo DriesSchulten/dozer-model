@@ -2,8 +2,6 @@ package nl.dries.wicket.hibernate.dozer.helper;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 
 import org.apache.commons.beanutils.PropertyUtils;
 import org.hibernate.EntityMode;
@@ -40,10 +38,7 @@ public class Attacher<T>
 	private final T toAttach;
 
 	/** Properties to attach */
-	private final Map<PropertyDefinition, HibernateProperty> properties;
-
-	/** Collection to attach */
-	private final List<PropertyDefinition> collections;
+	private final List<PropertyDefinition> properties;
 
 	/**
 	 * Construct
@@ -52,18 +47,16 @@ public class Attacher<T>
 	 *            object to attach to
 	 * @param session
 	 *            Hibernate {@link Session}
-	 * @param properties
+	 * @param detachedProperties
 	 *            detached properties
-	 * @param collections
+	 * @param detachedCollections
 	 *            detached collections
 	 */
-	public Attacher(T toAttach, Session session, Map<PropertyDefinition, HibernateProperty> properties,
-		List<PropertyDefinition> collections)
+	public Attacher(T toAttach, Session session, List<PropertyDefinition> detachedProperties)
 	{
 		this.toAttach = toAttach;
 		this.sessionImpl = (SessionImplementor) session;
-		this.properties = properties;
-		this.collections = collections;
+		this.properties = detachedProperties;
 	}
 
 	/**
@@ -73,17 +66,16 @@ public class Attacher<T>
 	{
 		if (properties != null)
 		{
-			for (Entry<PropertyDefinition, HibernateProperty> entry : properties.entrySet())
+			for (PropertyDefinition def : properties)
 			{
-				attachProperty(entry.getKey(), entry.getValue());
-			}
-		}
-
-		if (collections != null)
-		{
-			for (PropertyDefinition def : collections)
-			{
-				attachCollection(def);
+				if (def.getType() == null)
+				{
+					attachProperty(def);
+				}
+				else
+				{
+					attachCollection(def);
+				}
 			}
 		}
 	}
@@ -93,15 +85,13 @@ public class Attacher<T>
 	 * 
 	 * @param def
 	 *            the {@link PropertyDefinition}
-	 * @param val
-	 *            the {@link HibernateProperty}
 	 */
-	protected void attachProperty(PropertyDefinition def, HibernateProperty val)
+	protected void attachProperty(PropertyDefinition def)
 	{
-		EntityPersister persister = getPersister(val);
+		EntityPersister persister = getPersister(def.getHibernateProperty());
 		PersistenceContext persistenceContext = sessionImpl.getPersistenceContext();
 
-		EntityKey key = new EntityKey(val.getId(), persister, EntityMode.POJO);
+		EntityKey key = new EntityKey(def.getHibernateProperty().getId(), persister, EntityMode.POJO);
 
 		// Check existing instance
 		Object instance = persistenceContext.getEntity(key);
@@ -113,7 +103,7 @@ public class Attacher<T>
 			Object existing = persistenceContext.getProxy(key);
 			if (existing == null)
 			{
-				instance = persister.createProxy(val.getId(), sessionImpl);
+				instance = persister.createProxy(def.getHibernateProperty().getId(), sessionImpl);
 				persistenceContext.getBatchFetchQueue().addBatchLoadableEntityKey(key);
 				persistenceContext.addProxy(key, instance);
 			}
@@ -148,8 +138,11 @@ public class Attacher<T>
 			collection = new PersistentSet(sessionImpl);
 		}
 		collection.setOwner(toAttach);
-		collection.setSnapshot(def.getOwnerId(), def.getRole(), null);
+		collection.setSnapshot(def.getOwnerId(), def.getRole(), null); // Sort of 'fake' state...
 		persistenceContext.addUninitializedDetachedCollection(persister, collection);
+
+		// Restore value
+		setProperty(def.getProperty(), collection.getValue());
 	}
 
 	/**

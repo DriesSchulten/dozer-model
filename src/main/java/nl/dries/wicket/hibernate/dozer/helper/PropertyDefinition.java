@@ -19,6 +19,9 @@ public class PropertyDefinition implements Serializable
 	/** Collection type */
 	private CollectionType type;
 
+	/** Hibernate property */
+	private HibernateProperty hibernateProperty;
+
 	/**
 	 * Contsruct
 	 * 
@@ -81,6 +84,23 @@ public class PropertyDefinition implements Serializable
 	public String getRole()
 	{
 		return getOwner().getName() + "." + getProperty();
+	}
+
+	/**
+	 * @return the hibernateProperty
+	 */
+	public HibernateProperty getHibernateProperty()
+	{
+		return hibernateProperty;
+	}
+
+	/**
+	 * @param hibernateProperty
+	 *            the hibernateProperty to set
+	 */
+	public void setHibernateProperty(HibernateProperty hibernateProperty)
+	{
+		this.hibernateProperty = hibernateProperty;
 	}
 
 	/**
@@ -150,5 +170,26 @@ public class PropertyDefinition implements Serializable
 			return false;
 		}
 		return true;
+	}
+
+	/**
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString()
+	{
+		StringBuilder sb = new StringBuilder("[");
+		sb.append(property).append(" (").append(owner.getClass().getName()).append(") ");
+
+		if (type != null)
+		{
+			sb.append("collection of type ").append(type);
+		}
+		else
+		{
+			sb.append(hibernateProperty);
+		}
+
+		return sb.toString();
 	}
 }

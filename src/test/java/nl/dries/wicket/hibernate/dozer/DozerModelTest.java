@@ -9,6 +9,7 @@ import java.util.List;
 
 import nl.dries.wicket.hibernate.dozer.model.Adres;
 import nl.dries.wicket.hibernate.dozer.model.Person;
+import nl.dries.wicket.hibernate.dozer.model.TreeObject;
 
 import org.junit.Test;
 
@@ -105,11 +106,69 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 	}
 
 	/**
+	 * Tree test
+	 */
+	@Test
+	public void testWithTree()
+	{
+		DozerModel<TreeObject> model = new DozerModel<>(TreeObject.class, buildTree().getId());
+
+		model.getObject().getName(); // Root initialization
+		model.detach();
+
+		assertEquals(1, model.getObject().getChildren().size());
+		assertEquals(1, model.getObject().getChildren().get(0).getChildren().size());
+	}
+
+	/**
+	 * Tree test, using child as a starting point
+	 */
+	@Test
+	public void testWithTreeUsingChild()
+	{
+		buildTree();
+
+		TreeObject child = (TreeObject) getSession().load(TreeObject.class, 2L);
+		child.setParent((TreeObject) getSession().load(TreeObject.class, 1L));
+
+		DozerModel<TreeObject> model = new DozerModel<>(child);
+
+		model.detach();
+
+		assertEquals(1, model.getObject().getChildren().size());
+		assertEquals("root", model.getObject().getParent().getName());
+	}
+
+	/**
+	 * @return root node
+	 */
+	private TreeObject buildTree()
+	{
+		TreeObject root = new TreeObject(1L, "root");
+		getSession().saveOrUpdate(root);
+
+		TreeObject c1l1 = new TreeObject(2L, "c1l1");
+		c1l1.setParent(root);
+		root.getChildren().add(c1l1);
+		getSession().saveOrUpdate(c1l1);
+
+		TreeObject c1l2 = new TreeObject(3L, "c1l2");
+		c1l2.setParent(c1l1);
+		c1l1.getChildren().add(c1l2);
+		getSession().saveOrUpdate(c1l2);
+
+		getSession().flush();
+		getSession().clear();
+
+		return root;
+	}
+
+	/**
 	 * @see nl.dries.wicket.hibernate.dozer.AbstractWicketHibernateTest#getEntities()
 	 */
 	@Override
 	protected List<Class<? extends Serializable>> getEntities()
 	{
-		return Arrays.asList(Adres.class, Person.class);
+		return Arrays.asList(Adres.class, Person.class, TreeObject.class);
 	}
 }
