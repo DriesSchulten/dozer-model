@@ -1,7 +1,8 @@
 package nl.dries.wicket.hibernate.dozer;
 
-import java.util.Collection;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import nl.dries.wicket.hibernate.dozer.helper.Attacher;
@@ -37,7 +38,7 @@ public class DozerModel<T> implements IModel<T>
 	private Class<T> objectClass;
 
 	/** Map containing detached collections */
-	private Map<PropertyDefinition, Collection<HibernateProperty>> detachedCollections;
+	private List<PropertyDefinition> detachedCollections;
 
 	/** Map containing detached properties */
 	private Map<PropertyDefinition, HibernateProperty> detachedProperties;
@@ -76,7 +77,7 @@ public class DozerModel<T> implements IModel<T>
 			object = detachedObject;
 
 			// Re-attach properties
-			new Attacher<T>(object, sessionFinder.getSession(), detachedProperties).doAttach();
+			new Attacher<T>(object, sessionFinder.getSession(), detachedProperties, detachedCollections).doAttach();
 
 			// Remove detached state
 			detachedObject = null;
@@ -114,17 +115,15 @@ public class DozerModel<T> implements IModel<T>
 	 * 
 	 * @param property
 	 *            the {@link PropertyDefinition} it maps to
-	 * @param collection
-	 *            the detached collection
 	 */
-	public void addDetachedCollection(PropertyDefinition property, Collection<HibernateProperty> collection)
+	public void addDetachedCollection(PropertyDefinition property)
 	{
 		if (detachedCollections == null)
 		{
-			detachedCollections = new HashMap<>();
+			detachedCollections = new ArrayList<>();
 		}
 
-		detachedCollections.put(property, collection);
+		detachedCollections.add(property);
 	}
 
 	/**

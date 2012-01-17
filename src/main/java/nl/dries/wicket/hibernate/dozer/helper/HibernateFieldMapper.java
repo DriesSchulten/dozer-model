@@ -1,17 +1,19 @@
 package nl.dries.wicket.hibernate.dozer.helper;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
+import java.io.Serializable;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+
+import javax.persistence.Id;
 
 import nl.dries.wicket.hibernate.dozer.DozerModel;
 
+import org.apache.commons.beanutils.MethodUtils;
+import org.apache.commons.lang.WordUtils;
 import org.dozer.CustomFieldMapper;
 import org.dozer.classmap.ClassMap;
 import org.dozer.fieldmap.FieldMap;
 import org.hibernate.Hibernate;
-import org.hibernate.collection.PersistentBag;
 import org.hibernate.collection.PersistentCollection;
 import org.hibernate.collection.PersistentSet;
 import org.hibernate.proxy.HibernateProxy;
@@ -55,13 +57,22 @@ public class HibernateFieldMapper implements CustomFieldMapper
 	{
 		if (!Hibernate.isInitialized(sourceFieldValue))
 		{
-			PropertyDefinition def = new PropertyDefinition(null, fieldMapping.getSrcFieldName());
+			PropertyDefinition def = new PropertyDefinition((Class<? extends Serializable>) destination.getClass(),
+				getObjectId(source), fieldMapping.getSrcFieldName());
 
 			// Collection
 			if (sourceFieldValue instanceof PersistentCollection)
 			{
-				Collection<HibernateProperty> detached = detachCollection((PersistentCollection) sourceFieldValue);
-				model.addDetachedCollection(def, detached);
+				if (sourceFieldValue instanceof PersistentSet)
+				{
+					def.setType(CollectionType.SET);
+				}
+				else
+				{
+					def.setType(CollectionType.LIST);
+				}
+
+				model.addDetachedCollection(def);
 			}
 			// Other
 			else
@@ -80,45 +91,72 @@ public class HibernateFieldMapper implements CustomFieldMapper
 	}
 
 	/**
-	 * Returns a detached version of a Hibernate attached and proxied collection
+	 * Determine the given objects id
 	 * 
-	 * @param proxiedCollection
-	 *            a {@link PersistentCollection} instance
-	 * @return a {@link Collection} (can be a {@link java.util.Set} of {@link java.util.List} instance) containing
-	 *         {@link HibernateProperty} objects
+	 * @param source
+	 *            the source object
+	 * @return found id or <code>null</code>
 	 */
-	@SuppressWarnings("unchecked")
-	private Collection<HibernateProperty> detachCollection(PersistentCollection proxiedCollection)
+	private Serializable getObjectId(Object source)
 	{
-		Collection<HibernateProperty> detached = null;
+		Serializable id = null;
 
-		if (proxiedCollection instanceof PersistentBag)
+		if (!Hibernate.isInitialized(source))
 		{
-			detached = new ArrayList<>();
-
-			PersistentBag persistentBag = (PersistentBag) proxiedCollection;
-			for (Iterator<?> iter = persistentBag.iterator(); iter.hasNext();)
-			{
-				LazyInitializer initializer = ((HibernateProxy) iter.next()).getHibernateLazyInitializer();
-				detached.add(new HibernateProperty(initializer.getPersistentClass(), initializer.getIdentifier()));
-			}
-		}
-		else if (proxiedCollection instanceof PersistentSet)
-		{
-			detached = new HashSet<>();
-
-			PersistentSet persistentSet = (PersistentSet) proxiedCollection;
-			for (Iterator<?> iter = persistentSet.iterator(); iter.hasNext();)
-			{
-				LazyInitializer initializer = ((HibernateProxy) iter.next()).getHibernateLazyInitializer();
-				detached.add(new HibernateProperty(initializer.getPersistentClass(), initializer.getIdentifier()));
-			}
+			LazyInitializer initializer = ((HibernateProxy) source).getHibernateLazyInitializer();
+			id = initializer.getIdentifier();
 		}
 		else
 		{
-			LOG.warn("Persistent collection of type {} not supported", proxiedCollection.getClass());
+			Field idField = getIdField(source.getClass());
+			if (idField != null)
+			{
+				String getter = "get" + WordUtils.capitalize(idField.getName());
+				try
+				{
+					id = (Serializable) MethodUtils.invokeMethod(source, getter, null);
+				}
+				catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e)
+				{
+					LOG.error(String.format("No getter found for @Id field %s", idField.getName()), e);
+				}
+			}
+			else
+			{
+				throw new RuntimeException("Hibernate object, but no @Id field found " + source.getClass());
+			}
 		}
 
-		return detached;
+		return id;
+	}
+
+	/**
+	 * Returns a {@link Field} that contains the {@link Id} annotation
+	 * 
+	 * @param clazz
+	 *            the {@link Class} to search
+	 * @return found {@link Field} or <code>null</code>
+	 */
+	private Field getIdField(Class<?> clazz)
+	{
+		Field field = null;
+
+		if (clazz != Object.class)
+		{
+			for (Field f : clazz.getDeclaredFields())
+			{
+				if (f.getAnnotation(Id.class) != null)
+				{
+					field = f;
+				}
+			}
+		}
+
+		if (field == null)
+		{
+			field = getIdField(clazz.getSuperclass());
+		}
+
+		return field;
 	}
 }

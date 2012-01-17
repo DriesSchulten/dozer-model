@@ -7,32 +7,47 @@ public class PropertyDefinition implements Serializable
 	/** Default */
 	private static final long serialVersionUID = 1L;
 
-	/** Class of the property */
-	private final Class<? extends Serializable> propertyClass;
+	/** Owning entity */
+	private final Class<? extends Serializable> owner;
 
 	/** Property name in its containing instance */
 	private final String property;
 
+	/** Id of the owner */
+	private final Serializable ownerId;
+
+	/** Collection type */
+	private CollectionType type;
+
 	/**
 	 * Contsruct
 	 * 
-	 * @param propertyClass
-	 *            the class
+	 * @param owner
+	 *            the class of the property owner
 	 * @param property
 	 *            its name
 	 */
-	public PropertyDefinition(Class<? extends Serializable> propertyClass, String property)
+	public PropertyDefinition(Class<? extends Serializable> owner, Serializable ownerId, String property)
 	{
-		this.propertyClass = propertyClass;
+		this.owner = owner;
 		this.property = property;
+		this.ownerId = ownerId;
 	}
 
 	/**
-	 * @return the propertyClass
+	 * @return the owner
 	 */
-	public Class<? extends Serializable> getPropertyClass()
+	public Class<? extends Serializable> getOwner()
 	{
-		return propertyClass;
+		return owner;
+	}
+
+	/**
+	 * @return the ownerId
+	 */
+	public Serializable getOwnerId()
+	{
+		return ownerId;
 	}
 
 	/**
@@ -44,6 +59,31 @@ public class PropertyDefinition implements Serializable
 	}
 
 	/**
+	 * @return the type
+	 */
+	public CollectionType getType()
+	{
+		return type;
+	}
+
+	/**
+	 * @param type
+	 *            the type to set
+	 */
+	public void setType(CollectionType type)
+	{
+		this.type = type;
+	}
+
+	/**
+	 * @return role property (for a collection)
+	 */
+	public String getRole()
+	{
+		return getOwner().getName() + "." + getProperty();
+	}
+
+	/**
 	 * @see java.lang.Object#hashCode()
 	 */
 	@Override
@@ -51,8 +91,9 @@ public class PropertyDefinition implements Serializable
 	{
 		final int prime = 31;
 		int result = 1;
+		result = prime * result + ((owner == null) ? 0 : owner.hashCode());
+		result = prime * result + ((ownerId == null) ? 0 : ownerId.hashCode());
 		result = prime * result + ((property == null) ? 0 : property.hashCode());
-		result = prime * result + ((propertyClass == null) ? 0 : propertyClass.hashCode());
 		return result;
 	}
 
@@ -75,6 +116,28 @@ public class PropertyDefinition implements Serializable
 			return false;
 		}
 		PropertyDefinition other = (PropertyDefinition) obj;
+		if (owner == null)
+		{
+			if (other.owner != null)
+			{
+				return false;
+			}
+		}
+		else if (!owner.equals(other.owner))
+		{
+			return false;
+		}
+		if (ownerId == null)
+		{
+			if (other.ownerId != null)
+			{
+				return false;
+			}
+		}
+		else if (!ownerId.equals(other.ownerId))
+		{
+			return false;
+		}
 		if (property == null)
 		{
 			if (other.property != null)
@@ -83,17 +146,6 @@ public class PropertyDefinition implements Serializable
 			}
 		}
 		else if (!property.equals(other.property))
-		{
-			return false;
-		}
-		if (propertyClass == null)
-		{
-			if (other.propertyClass != null)
-			{
-				return false;
-			}
-		}
-		else if (!propertyClass.equals(other.propertyClass))
 		{
 			return false;
 		}

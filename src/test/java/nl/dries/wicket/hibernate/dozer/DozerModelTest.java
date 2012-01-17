@@ -77,6 +77,34 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 	}
 
 	/**
+	 * Detach with list proxy
+	 */
+	@Test
+	public void testLoadedListDetach()
+	{
+		Person person = new Person();
+		person.setId(1L);
+		person.setName("test");
+
+		Adres adres = new Adres();
+		adres.setId(1L);
+		adres.setStreet("street");
+		adres.setPerson(person);
+		person.getAdresses().add(adres);
+
+		getSession().saveOrUpdate(person);
+		getSession().flush();
+		getSession().clear();
+
+		person.setAdresses(Arrays.asList((Adres) getSession().load(Adres.class, 1L))); // Forcing proxy
+		DozerModel<Person> model = new DozerModel<>(person);
+		model.detach();
+
+		assertEquals(person, model.getObject());
+		assertEquals(adres, model.getObject().getAdresses().get(0));
+	}
+
+	/**
 	 * @see nl.dries.wicket.hibernate.dozer.AbstractWicketHibernateTest#getEntities()
 	 */
 	@Override
