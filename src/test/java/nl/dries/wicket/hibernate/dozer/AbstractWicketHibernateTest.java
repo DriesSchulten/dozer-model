@@ -23,7 +23,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 public abstract class AbstractWicketHibernateTest
 {
 	/** Session factory */
-	private final SessionFactory sessionFactory = HibernateHelper.buildSessionFactory(getEntities());
+	private static SessionFactory sessionFactory;
 
 	/** Wicket tester instance */
 	private WicketTester wicketTester;
@@ -37,6 +37,11 @@ public abstract class AbstractWicketHibernateTest
 	@Before
 	public void openSession()
 	{
+		if (sessionFactory == null)
+		{
+			sessionFactory = HibernateHelper.buildSessionFactory(getEntities());
+		}
+
 		if (!TransactionSynchronizationManager.hasResource(sessionFactory))
 		{
 			session = sessionFactory.openSession();

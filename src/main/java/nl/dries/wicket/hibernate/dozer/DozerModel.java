@@ -153,9 +153,12 @@ public class DozerModel<T> implements IModel<T>
 				sb.append(objectClass.getName());
 				sb.append(", detached Hibernate properties: ");
 
-				for (Entry<Object, List<PropertyDefinition>> entry : detachedProperties.entrySet())
+				if (detachedProperties != null)
 				{
-					sb.append("\n").append(entry.getKey()).append(": [").append(entry.getValue()).append("]");
+					for (Entry<Object, List<PropertyDefinition>> entry : detachedProperties.entrySet())
+					{
+						sb.append("\n").append(entry.getKey()).append(": [").append(entry.getValue()).append("]");
+					}
 				}
 
 				LOG.debug(sb.toString());
