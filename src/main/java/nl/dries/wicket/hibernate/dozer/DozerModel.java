@@ -17,6 +17,7 @@ import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.dozer.DozerBeanMapper;
 import org.dozer.Mapper;
 import org.hibernate.Hibernate;
+import org.hibernate.proxy.HibernateProxy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -138,11 +139,18 @@ public class DozerModel<T> implements IModel<T>
 	/**
 	 * @see org.apache.wicket.model.IDetachable#detach()
 	 */
+	@SuppressWarnings("unchecked")
 	@Override
 	public void detach()
 	{
 		if (object != null && detachedObject == null)
 		{
+			if (object instanceof HibernateProxy)
+			{
+				HibernateProxy proxy = (HibernateProxy) object;
+				object = (T) proxy.getHibernateLazyInitializer().getImplementation();
+			}
+
 			DozerBeanMapper mapper = createMapper();
 			detachedObject = mapper.map(object, objectClass);
 			object = null;

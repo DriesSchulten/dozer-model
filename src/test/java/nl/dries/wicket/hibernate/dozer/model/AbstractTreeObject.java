@@ -15,7 +15,7 @@ import javax.persistence.OneToMany;
  * @author dries
  */
 @Entity(name = "treeobject")
-public class TreeObject implements Serializable
+public abstract class AbstractTreeObject implements Serializable
 {
 	/** Default */
 	private static final long serialVersionUID = 1L;
@@ -26,11 +26,11 @@ public class TreeObject implements Serializable
 
 	/** */
 	@ManyToOne(cascade = CascadeType.ALL)
-	private TreeObject parent;
+	private AbstractTreeObject parent;
 
 	/** */
 	@OneToMany
-	private List<TreeObject> children = new ArrayList<>();
+	private List<AbstractTreeObject> children = new ArrayList<>();
 
 	/** */
 	@Column
@@ -39,7 +39,7 @@ public class TreeObject implements Serializable
 	/**
 	 * Construct
 	 */
-	public TreeObject()
+	public AbstractTreeObject()
 	{
 
 	}
@@ -50,7 +50,7 @@ public class TreeObject implements Serializable
 	 * @param id
 	 * @param name
 	 */
-	public TreeObject(Long id, String name)
+	public AbstractTreeObject(Long id, String name)
 	{
 		this.id = id;
 		this.name = name;
@@ -76,7 +76,7 @@ public class TreeObject implements Serializable
 	/**
 	 * @return the parent
 	 */
-	public TreeObject getParent()
+	public AbstractTreeObject getParent()
 	{
 		return parent;
 	}
@@ -85,7 +85,7 @@ public class TreeObject implements Serializable
 	 * @param parent
 	 *            the parent to set
 	 */
-	public void setParent(TreeObject parent)
+	public void setParent(AbstractTreeObject parent)
 	{
 		this.parent = parent;
 	}
@@ -93,7 +93,7 @@ public class TreeObject implements Serializable
 	/**
 	 * @return the children
 	 */
-	public List<TreeObject> getChildren()
+	public List<AbstractTreeObject> getChildren()
 	{
 		return children;
 	}
@@ -102,7 +102,7 @@ public class TreeObject implements Serializable
 	 * @param children
 	 *            the children to set
 	 */
-	public void setChildren(List<TreeObject> children)
+	public void setChildren(List<AbstractTreeObject> children)
 	{
 		this.children = children;
 	}
@@ -155,7 +155,7 @@ public class TreeObject implements Serializable
 		{
 			return false;
 		}
-		TreeObject other = (TreeObject) obj;
+		AbstractTreeObject other = (AbstractTreeObject) obj;
 		if (id == null)
 		{
 			if (other.id != null)

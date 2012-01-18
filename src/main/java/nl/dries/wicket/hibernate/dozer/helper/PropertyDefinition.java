@@ -1,6 +1,7 @@
 package nl.dries.wicket.hibernate.dozer.helper;
 
 import java.io.Serializable;
+import java.lang.reflect.Field;
 
 public class PropertyDefinition implements Serializable
 {
@@ -83,7 +84,27 @@ public class PropertyDefinition implements Serializable
 	 */
 	public String getRole()
 	{
-		return getOwner().getName() + "." + getProperty();
+		return getPropertyOwnerClass(getOwner()) + "." + getProperty();
+	}
+
+	/**
+	 * Determines the owner of the current property (could be a superclass of the current class)
+	 * 
+	 * @param clazz
+	 *            {@link Class}
+	 * @return found ownen (class name)
+	 */
+	private String getPropertyOwnerClass(Class<?> clazz)
+	{
+		for (Field field : clazz.getDeclaredFields())
+		{
+			if (getProperty().equals(field.getName()))
+			{
+				return clazz.getName();
+			}
+		}
+
+		return getPropertyOwnerClass(clazz.getSuperclass());
 	}
 
 	/**

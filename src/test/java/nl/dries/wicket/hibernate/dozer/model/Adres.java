@@ -7,6 +7,8 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 
+import org.hibernate.Hibernate;
+
 /**
  * @author dries
  */
@@ -107,7 +109,7 @@ public class Adres implements Serializable
 		{
 			return false;
 		}
-		if (getClass() != obj.getClass())
+		if (Hibernate.getClass(getClass()) != Hibernate.getClass(obj.getClass()))
 		{
 			return false;
 		}
