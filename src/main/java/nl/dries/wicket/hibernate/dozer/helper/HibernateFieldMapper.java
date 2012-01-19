@@ -65,6 +65,10 @@ public class HibernateFieldMapper implements CustomFieldMapper
 			{
 				if (sourceFieldValue instanceof PersistentSet)
 				{
+					def.setType(CollectionType.SORTED_SET);
+				}
+				else if (sourceFieldValue instanceof PersistentSet)
+				{
 					def.setType(CollectionType.SET);
 				}
 				else

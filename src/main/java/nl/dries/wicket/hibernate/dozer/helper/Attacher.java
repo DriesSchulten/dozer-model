@@ -6,9 +6,7 @@ import java.util.List;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.hibernate.EntityMode;
 import org.hibernate.Session;
-import org.hibernate.collection.PersistentBag;
 import org.hibernate.collection.PersistentCollection;
-import org.hibernate.collection.PersistentSet;
 import org.hibernate.engine.EntityKey;
 import org.hibernate.engine.PersistenceContext;
 import org.hibernate.engine.SessionFactoryImplementor;
@@ -128,15 +126,7 @@ public class Attacher<T>
 		CollectionPersister persister = getCollectionPersister(def);
 		PersistenceContext persistenceContext = sessionImpl.getPersistenceContext();
 
-		PersistentCollection collection;
-		if (CollectionType.LIST.equals(def.getType()))
-		{
-			collection = new PersistentBag(sessionImpl);
-		}
-		else
-		{
-			collection = new PersistentSet(sessionImpl);
-		}
+		PersistentCollection collection = def.getType().createCollection(sessionImpl);
 		collection.setOwner(toAttach);
 		collection.setSnapshot(def.getOwnerId(), def.getRole(), null); // Sort of 'fake' state...
 		persistenceContext.addUninitializedDetachedCollection(persister, collection);
