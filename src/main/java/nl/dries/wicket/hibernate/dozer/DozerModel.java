@@ -2,6 +2,7 @@ package nl.dries.wicket.hibernate.dozer;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -202,7 +203,7 @@ public class DozerModel<T> implements IModel<T>
 	 */
 	private DozerBeanMapper createMapper()
 	{
-		DozerBeanMapper mapper = new DozerBeanMapper();
+		DozerBeanMapper mapper = new DozerBeanMapper(Arrays.asList("object-factory.xml"));
 		mapper.setCustomFieldMapper(new HibernateFieldMapper(this));
 		return mapper;
 	}
