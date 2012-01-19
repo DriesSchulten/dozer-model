@@ -7,8 +7,10 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
 
+import nl.dries.wicket.hibernate.dozer.model.AbstractOrganization;
 import nl.dries.wicket.hibernate.dozer.model.AbstractTreeObject;
 import nl.dries.wicket.hibernate.dozer.model.Adres;
+import nl.dries.wicket.hibernate.dozer.model.Company;
 import nl.dries.wicket.hibernate.dozer.model.DescTreeObject;
 import nl.dries.wicket.hibernate.dozer.model.Person;
 import nl.dries.wicket.hibernate.dozer.model.RootTreeObject;
@@ -151,6 +153,26 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 	}
 
 	/**
+	 * Abstract property in mapping
+	 */
+	@Test
+	public void testWithAbstractProperty()
+	{
+		Person person = new Person();
+		person.setId(1L);
+		person.setName("name");
+
+		Company company = new Company();
+		company.setId(1L);
+		person.setOrganization(company);
+
+		DozerModel<Person> model = new DozerModel<>(person);
+		model.detach();
+
+		assertEquals(company, model.getObject().getOrganization());
+	}
+
+	/**
 	 * @return root node
 	 */
 	private AbstractTreeObject buildTree()
@@ -181,6 +203,6 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 	protected List<Class<? extends Serializable>> getEntities()
 	{
 		return Arrays.asList(Adres.class, Person.class, AbstractTreeObject.class, DescTreeObject.class,
-			RootTreeObject.class);
+			RootTreeObject.class, AbstractOrganization.class, Company.class);
 	}
 }
