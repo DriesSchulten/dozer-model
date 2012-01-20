@@ -2,7 +2,6 @@ package nl.dries.wicket.hibernate.dozer;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +16,7 @@ import org.apache.wicket.model.IModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.dozer.DozerBeanMapper;
 import org.dozer.Mapper;
+import org.dozer.util.DozerConstants;
 import org.hibernate.Hibernate;
 import org.hibernate.proxy.HibernateProxy;
 import org.slf4j.Logger;
@@ -74,6 +74,11 @@ public class DozerModel<T> implements IModel<T>
 
 		if (object != null)
 		{
+			if (object.getClass().getName().contains(DozerConstants.CGLIB_ID))
+			{
+				LOG.warn("Given object is a Cglib proxy this can cause unexpected behavior, " + object);
+			}
+
 			this.objectClass = Hibernate.getClass(object);
 		}
 	}
@@ -203,7 +208,7 @@ public class DozerModel<T> implements IModel<T>
 	 */
 	private DozerBeanMapper createMapper()
 	{
-		DozerBeanMapper mapper = new DozerBeanMapper(Arrays.asList("object-factory.xml"));
+		DozerBeanMapper mapper = new DozerBeanMapper();
 		mapper.setCustomFieldMapper(new HibernateFieldMapper(this));
 		return mapper;
 	}
