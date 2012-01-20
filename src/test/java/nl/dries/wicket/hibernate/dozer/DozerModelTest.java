@@ -102,8 +102,12 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 		getSession().clear();
 
 		person.setAdresses(Arrays.asList((Adres) getSession().load(Adres.class, 1L))); // Forcing proxy
+
 		DozerModel<Person> model = new DozerModel<>(person);
 		model.detach();
+
+		closeSession();
+		openSession();
 
 		assertEquals(person, model.getObject());
 		assertEquals(adres, model.getObject().getAdresses().get(0));
@@ -164,12 +168,18 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 
 		Company company = new Company();
 		company.setId(1L);
+
+		Adres adres = new Adres();
+		adres.setStreet("street");
+		company.setAdres(adres);
+
 		person.setOrganization(company);
 
 		DozerModel<Person> model = new DozerModel<>(person);
 		model.detach();
 
 		assertEquals(company, model.getObject().getOrganization());
+		assertEquals(adres, ((Company) model.getObject().getOrganization()).getAdres());
 	}
 
 	/**

@@ -129,7 +129,12 @@ public class Attacher<T>
 		PersistentCollection collection = def.getType().createCollection(sessionImpl);
 		collection.setOwner(toAttach);
 		collection.setSnapshot(def.getOwnerId(), def.getRole(), null); // Sort of 'fake' state...
-		persistenceContext.addUninitializedDetachedCollection(persister, collection);
+		persistenceContext.addUninitializedCollection(persister, collection, def.getOwnerId());
+
+		// Register the owning entity otherwise the collection wil be seen as unreferenced when Hibernate flushes
+		persistenceContext.addEntity(
+			new EntityKey(def.getOwnerId(), sessionImpl.getFactory().getEntityPersister(def.getOwner().getName()),
+				EntityMode.POJO), toAttach);
 
 		// Restore value
 		setProperty(def.getProperty(), collection.getValue());
