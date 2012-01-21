@@ -9,7 +9,9 @@ import java.util.Map.Entry;
 
 import nl.dries.wicket.hibernate.dozer.helper.Attacher;
 import nl.dries.wicket.hibernate.dozer.helper.HibernateFieldMapper;
-import nl.dries.wicket.hibernate.dozer.helper.PropertyDefinition;
+import nl.dries.wicket.hibernate.dozer.properties.AbstractPropertyDefinition;
+import nl.dries.wicket.hibernate.dozer.properties.CollectionPropertyDefinition;
+import nl.dries.wicket.hibernate.dozer.properties.SimplePropertyDefinition;
 
 import org.apache.wicket.injection.Injector;
 import org.apache.wicket.model.IModel;
@@ -54,7 +56,10 @@ public class DozerModel<T> implements IModel<T>
 	private Class<T> objectClass;
 
 	/** Map containing detached properties */
-	private Map<Object, List<PropertyDefinition>> detachedProperties;
+	private Map<Object, List<SimplePropertyDefinition>> detachedProperties;
+
+	/** Map containing detached collection */
+	private Map<Object, List<CollectionPropertyDefinition>> detachedCollections;
 
 	/** */
 	@SpringBean
@@ -112,18 +117,17 @@ public class DozerModel<T> implements IModel<T>
 	@Override
 	public T getObject()
 	{
-		List<Attacher<Object>> list = buildAttachers();
-
 		// Possibly restore detached state
 		if (object == null && detachedObject != null)
 		{
 			object = detachedObject;
 
+			List<Attacher<Object>> list = buildAttachers(detachedProperties);
 			if (list != null)
 			{
 				for (Attacher<Object> attacher : list)
 				{
-					attacher.doAttachProperties();
+					attacher.doAttach();
 				}
 			}
 
@@ -134,11 +138,12 @@ public class DozerModel<T> implements IModel<T>
 		// We always need to re-attach unintialized collections, when Hiberate flushes the collections are re-wrapped
 		// (creating new collection proxies) this means that is is possible that a flush has happend between our 2
 		// getObject calls within the same request-cycle and thus invalidating or created collection proxy.
+		List<Attacher<Object>> list = buildAttachers(detachedCollections);
 		if (list != null)
 		{
 			for (Attacher<Object> attacher : list)
 			{
-				attacher.doAttachCollections();
+				attacher.doAttach();
 			}
 		}
 
@@ -146,20 +151,24 @@ public class DozerModel<T> implements IModel<T>
 	}
 
 	/**
+	 * @param detached
+	 *            the map for which to build {@link Attacher}s
 	 * @return set with {@link Attacher}s
 	 */
-	private List<Attacher<Object>> buildAttachers()
+	@SuppressWarnings("unchecked")
+	private List<Attacher<Object>> buildAttachers(Map<?, ?> detached)
 	{
 		List<Attacher<Object>> list = null;
 
-		if (detachedProperties != null)
+		if (detached != null)
 		{
-			list = new ArrayList<>(detachedProperties.size());
+			list = new ArrayList<>(detached.size());
 
 			// Re-attach properties
-			for (Entry<Object, List<PropertyDefinition>> entry : detachedProperties.entrySet())
+			for (Entry<?, ?> entry : detached.entrySet())
 			{
-				list.add(new Attacher<Object>(entry.getKey(), sessionFinder.getSession(), entry.getValue()));
+				list.add(new Attacher<Object>(entry.getKey(), sessionFinder.getSession(),
+					(List<? extends AbstractPropertyDefinition>) entry.getValue()));
 			}
 		}
 
@@ -193,23 +202,6 @@ public class DozerModel<T> implements IModel<T>
 			DozerBeanMapper mapper = createMapper();
 			detachedObject = mapper.map(object, objectClass);
 			object = null;
-
-			if (LOG.isDebugEnabled())
-			{
-				StringBuilder sb = new StringBuilder("Detached model state for type ");
-				sb.append(objectClass.getName());
-				sb.append(", detached Hibernate properties: ");
-
-				if (detachedProperties != null)
-				{
-					for (Entry<Object, List<PropertyDefinition>> entry : detachedProperties.entrySet())
-					{
-						sb.append("\n").append(entry.getKey()).append(": [").append(entry.getValue()).append("]");
-					}
-				}
-
-				LOG.debug(sb.toString());
-			}
 		}
 	}
 
@@ -219,21 +211,38 @@ public class DozerModel<T> implements IModel<T>
 	 * @param object
 	 *            the owner (Dozer converted instance, <b>NO</b> Hibernate proxy)
 	 * @param property
-	 *            the {@link PropertyDefinition} it maps to
+	 *            the {@link AbstractPropertyDefinition} it maps to
 	 */
-	public void addDetachedProperty(Object owner, PropertyDefinition def)
+	public void addDetachedProperty(Object owner, AbstractPropertyDefinition def)
 	{
-		if (detachedProperties == null)
+		if (def instanceof SimplePropertyDefinition)
 		{
-			detachedProperties = new HashMap<>();
-		}
+			if (detachedProperties == null)
+			{
+				detachedProperties = new HashMap<>();
+			}
 
-		if (!detachedProperties.containsKey(owner))
+			if (!detachedProperties.containsKey(owner))
+			{
+				detachedProperties.put(owner, new ArrayList<SimplePropertyDefinition>());
+			}
+
+			detachedProperties.get(owner).add((SimplePropertyDefinition) def);
+		}
+		else
 		{
-			detachedProperties.put(owner, new ArrayList<PropertyDefinition>());
-		}
+			if (detachedCollections == null)
+			{
+				detachedCollections = new HashMap<>();
+			}
 
-		detachedProperties.get(owner).add(def);
+			if (!detachedCollections.containsKey(owner))
+			{
+				detachedCollections.put(owner, new ArrayList<CollectionPropertyDefinition>());
+			}
+
+			detachedCollections.get(owner).add((CollectionPropertyDefinition) def);
+		}
 	}
 
 	/**
