@@ -7,6 +7,9 @@ import java.lang.reflect.InvocationTargetException;
 import javax.persistence.Id;
 
 import nl.dries.wicket.hibernate.dozer.DozerModel;
+import nl.dries.wicket.hibernate.dozer.properties.AbstractPropertyDefinition;
+import nl.dries.wicket.hibernate.dozer.properties.CollectionPropertyDefinition;
+import nl.dries.wicket.hibernate.dozer.properties.SimplePropertyDefinition;
 
 import org.apache.commons.beanutils.MethodUtils;
 import org.apache.commons.lang.WordUtils;
@@ -57,26 +60,27 @@ public class HibernateFieldMapper implements CustomFieldMapper
 	{
 		if (!Hibernate.isInitialized(sourceFieldValue))
 		{
-			PropertyDefinition def = new PropertyDefinition((Class<? extends Serializable>) destination.getClass(),
-				getObjectId(source), fieldMapping.getSrcFieldName());
+			final AbstractPropertyDefinition def;
 
 			// Collection
 			if (sourceFieldValue instanceof PersistentCollection)
 			{
+				final CollectionType type;
 				if (sourceFieldValue instanceof PersistentSet)
 				{
-					def.setType(CollectionType.SORTED_SET);
+					type = CollectionType.SORTED_SET;
 				}
 				else if (sourceFieldValue instanceof PersistentSet)
 				{
-					def.setType(CollectionType.SET);
+					type = CollectionType.SET;
 				}
 				else
 				{
-					def.setType(CollectionType.LIST);
+					type = CollectionType.LIST;
 				}
 
-				model.addDetachedProperty(destination, def);
+				def = new CollectionPropertyDefinition((Class<? extends Serializable>) destination.getClass(),
+					getObjectId(source), fieldMapping.getSrcFieldName(), type);
 			}
 			// Other
 			else
@@ -84,9 +88,11 @@ public class HibernateFieldMapper implements CustomFieldMapper
 				LazyInitializer initializer = ((HibernateProxy) sourceFieldValue).getHibernateLazyInitializer();
 				HibernateProperty property = new HibernateProperty(initializer.getPersistentClass(),
 					initializer.getIdentifier());
-				def.setHibernateProperty(property);
-				model.addDetachedProperty(destination, def);
+				def = new SimplePropertyDefinition((Class<? extends Serializable>) destination.getClass(),
+					getObjectId(source), fieldMapping.getSrcFieldName(), property);
 			}
+
+			model.addDetachedProperty(destination, def);
 
 			return true;
 		}

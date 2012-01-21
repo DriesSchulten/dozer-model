@@ -3,6 +3,10 @@ package nl.dries.wicket.hibernate.dozer.helper;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
+import nl.dries.wicket.hibernate.dozer.properties.AbstractPropertyDefinition;
+import nl.dries.wicket.hibernate.dozer.properties.CollectionPropertyDefinition;
+import nl.dries.wicket.hibernate.dozer.properties.SimplePropertyDefinition;
+
 import org.apache.commons.beanutils.PropertyUtils;
 import org.hibernate.EntityMode;
 import org.hibernate.Session;
@@ -36,7 +40,7 @@ public class Attacher<T>
 	private final T toAttach;
 
 	/** Properties to attach */
-	private final List<PropertyDefinition> properties;
+	private final List<? extends AbstractPropertyDefinition> properties;
 
 	/**
 	 * Construct
@@ -50,7 +54,7 @@ public class Attacher<T>
 	 * @param detachedCollections
 	 *            detached collections
 	 */
-	public Attacher(T toAttach, Session session, List<PropertyDefinition> detachedProperties)
+	public Attacher(T toAttach, Session session, List<? extends AbstractPropertyDefinition> detachedProperties)
 	{
 		this.toAttach = toAttach;
 		this.sessionImpl = (SessionImplementor) session;
@@ -60,32 +64,19 @@ public class Attacher<T>
 	/**
 	 * Attach
 	 */
-	public void doAttachProperties()
+	public void doAttach()
 	{
 		if (properties != null)
 		{
-			for (PropertyDefinition def : properties)
+			for (AbstractPropertyDefinition def : properties)
 			{
-				if (def.getCollectionType() == null)
+				if (def instanceof SimplePropertyDefinition)
 				{
-					attachProperty(def);
+					attach((SimplePropertyDefinition) def);
 				}
-			}
-		}
-	}
-
-	/**
-	 * Attach collections
-	 */
-	public void doAttachCollections()
-	{
-		if (properties != null)
-		{
-			for (PropertyDefinition def : properties)
-			{
-				if (def.getCollectionType() != null)
+				else
 				{
-					attachCollection(def);
+					attach((CollectionPropertyDefinition) def);
 				}
 			}
 		}
@@ -95,9 +86,9 @@ public class Attacher<T>
 	 * Attach a property
 	 * 
 	 * @param def
-	 *            the {@link PropertyDefinition}
+	 *            the {@link SimplePropertyDefinition}
 	 */
-	protected void attachProperty(PropertyDefinition def)
+	protected void attach(SimplePropertyDefinition def)
 	{
 		EntityPersister persister = getPersister(def.getHibernateProperty());
 		PersistenceContext persistenceContext = sessionImpl.getPersistenceContext();
@@ -132,9 +123,9 @@ public class Attacher<T>
 	 * Attach a collection
 	 * 
 	 * @param def
-	 *            the {@link PropertyDefinition}
+	 *            the {@link CollectionPropertyDefinition}
 	 */
-	protected void attachCollection(PropertyDefinition def)
+	protected void attach(CollectionPropertyDefinition def)
 	{
 		CollectionPersister persister = getCollectionPersister(def);
 		PersistenceContext persistenceContext = sessionImpl.getPersistenceContext();
@@ -186,10 +177,10 @@ public class Attacher<T>
 	 * Returns a {@link CollectionPersister} for the given entity class
 	 * 
 	 * @param def
-	 *            the {@link PropertyDefinition}
+	 *            the {@link AbstractPropertyDefinition}
 	 * @return a {@link CollectionPersister}
 	 */
-	protected CollectionPersister getCollectionPersister(PropertyDefinition def)
+	protected CollectionPersister getCollectionPersister(CollectionPropertyDefinition def)
 	{
 		SessionFactoryImplementor factory = sessionImpl.getFactory();
 		return factory.getCollectionPersister(def.getRole());

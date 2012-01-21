@@ -6,6 +6,7 @@ import java.lang.reflect.InvocationTargetException;
 import org.hibernate.collection.PersistentBag;
 import org.hibernate.collection.PersistentCollection;
 import org.hibernate.collection.PersistentSet;
+import org.hibernate.collection.PersistentSortedSet;
 import org.hibernate.engine.SessionImplementor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +23,7 @@ public enum CollectionType
 	/** */
 	SET(PersistentSet.class),
 	/** */
-	SORTED_SET(PersistentSet.class);
+	SORTED_SET(PersistentSortedSet.class);
 
 	/** Logger */
 	private static final Logger LOG = LoggerFactory.getLogger(CollectionType.class);
