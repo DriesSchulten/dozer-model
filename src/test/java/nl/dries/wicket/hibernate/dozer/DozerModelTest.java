@@ -2,6 +2,7 @@ package nl.dries.wicket.hibernate.dozer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -15,6 +16,7 @@ import nl.dries.wicket.hibernate.dozer.model.DescTreeObject;
 import nl.dries.wicket.hibernate.dozer.model.Person;
 import nl.dries.wicket.hibernate.dozer.model.RootTreeObject;
 
+import org.apache.wicket.model.Model;
 import org.junit.Test;
 
 /**
@@ -180,6 +182,56 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 
 		assertEquals(company, model.getObject().getOrganization());
 		assertEquals(adres, ((Company) model.getObject().getOrganization()).getAdres());
+	}
+
+	/**
+	 * Test a collection that is attached, next the session is flushed. Caused a lazy-init.
+	 */
+	@Test
+	public void testCollectionWithFlush()
+	{
+		Person person = new Person();
+		person.setId(1L);
+		person.setName("person");
+		getSession().saveOrUpdate(person);
+
+		Adres adres = new Adres();
+		adres.setId(1L);
+		adres.setStreet("street");
+		adres.setPerson(person);
+		person.getAdresses().add(adres);
+		getSession().saveOrUpdate(adres);
+
+		getSession().flush();
+		getSession().clear();
+
+		DozerModel<Person> model = new DozerModel<>((Person) getSession().load(Person.class, 1L));
+		model.detach();
+
+		// Trigger attach
+		model.getObject();
+
+		// Force flush
+		getSession().flush();
+
+		// Check adress
+		assertEquals("street", model.getObject().getAdresses().get(0).getStreet());
+	}
+
+	/**
+	 * Equals
+	 */
+	@Test
+	public void testModelEquals()
+	{
+		Person person = new Person();
+		person.setId(1L);
+		person.setName("person");
+
+		assertTrue(new DozerModel<Person>(person).equals(new DozerModel<>(person)));
+		assertTrue(new DozerModel<Person>(person).equals(new Model<>(person)));
+
+		assertFalse(new DozerModel<Person>(person).equals(new DozerModel<>(new Person())));
 	}
 
 	/**

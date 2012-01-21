@@ -65,7 +65,7 @@ public class PropertyDefinition implements Serializable
 	/**
 	 * @return the type
 	 */
-	public CollectionType getType()
+	public CollectionType getCollectionType()
 	{
 		return type;
 	}

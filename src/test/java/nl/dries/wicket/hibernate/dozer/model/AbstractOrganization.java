@@ -86,7 +86,7 @@ public abstract class AbstractOrganization implements Serializable
 		{
 			return false;
 		}
-		if (Hibernate.getClass(getClass()) != Hibernate.getClass(obj.getClass()))
+		if (Hibernate.getClass(this) != Hibernate.getClass(obj))
 		{
 			return false;
 		}

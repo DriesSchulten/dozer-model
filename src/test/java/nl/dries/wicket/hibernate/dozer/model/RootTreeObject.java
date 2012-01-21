@@ -27,6 +27,5 @@ public class RootTreeObject extends AbstractTreeObject
 	public RootTreeObject(Long id, String name)
 	{
 		super(id, name);
-		// TODO Auto-generated constructor stub
 	}
 }

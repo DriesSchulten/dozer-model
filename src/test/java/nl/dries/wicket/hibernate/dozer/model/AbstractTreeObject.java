@@ -11,6 +11,8 @@ import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 
+import org.hibernate.Hibernate;
+
 /**
  * @author dries
  */
@@ -151,7 +153,7 @@ public abstract class AbstractTreeObject implements Serializable
 		{
 			return false;
 		}
-		if (getClass() != obj.getClass())
+		if (Hibernate.getClass(this) != Hibernate.getClass(obj))
 		{
 			return false;
 		}

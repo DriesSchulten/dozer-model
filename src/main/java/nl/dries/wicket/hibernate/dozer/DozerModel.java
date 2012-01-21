@@ -112,25 +112,58 @@ public class DozerModel<T> implements IModel<T>
 	@Override
 	public T getObject()
 	{
+		List<Attacher<Object>> list = buildAttachers();
+
 		// Possibly restore detached state
 		if (object == null && detachedObject != null)
 		{
 			object = detachedObject;
 
-			if (detachedProperties != null)
+			if (list != null)
 			{
-				// Re-attach properties
-				for (Entry<Object, List<PropertyDefinition>> entry : detachedProperties.entrySet())
+				for (Attacher<Object> attacher : list)
 				{
-					new Attacher<Object>(entry.getKey(), sessionFinder.getSession(), entry.getValue()).doAttach();
+					attacher.doAttachProperties();
 				}
 			}
 
 			// Remove detached state
 			detachedObject = null;
-			detachedProperties = null;
 		}
+
+		// We always need to re-attach unintialized collections, when Hiberate flushes the collections are re-wrapped
+		// (creating new collection proxies) this means that is is possible that a flush has happend between our 2
+		// getObject calls within the same request-cycle and thus invalidating or created collection proxy.
+		if (list != null)
+		{
+			for (Attacher<Object> attacher : list)
+			{
+				attacher.doAttachCollections();
+			}
+		}
+
 		return object;
+	}
+
+	/**
+	 * @return set with {@link Attacher}s
+	 */
+	private List<Attacher<Object>> buildAttachers()
+	{
+		List<Attacher<Object>> list = null;
+
+		if (detachedProperties != null)
+		{
+			list = new ArrayList<>(detachedProperties.size());
+
+			// Re-attach properties
+			for (Entry<Object, List<PropertyDefinition>> entry : detachedProperties.entrySet())
+			{
+				list.add(new Attacher<Object>(entry.getKey(), sessionFinder.getSession(), entry.getValue()));
+			}
+		}
+
+		return list;
 	}
 
 	/**
@@ -211,5 +244,51 @@ public class DozerModel<T> implements IModel<T>
 		DozerBeanMapper mapper = new DozerBeanMapper();
 		mapper.setCustomFieldMapper(new HibernateFieldMapper(this));
 		return mapper;
+	}
+
+	/**
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((getObject() == null) ? 0 : getObject().hashCode());
+		return result;
+	}
+
+	/**
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@SuppressWarnings("unchecked")
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj)
+		{
+			return true;
+		}
+		if (obj == null)
+		{
+			return false;
+		}
+		if (obj.getClass().isAssignableFrom(IModel.class))
+		{
+			return false;
+		}
+		IModel<T> other = (IModel<T>) obj;
+		if (getObject() == null)
+		{
+			if (other.getObject() != null)
+			{
+				return false;
+			}
+		}
+		else if (!getObject().equals(other.getObject()))
+		{
+			return false;
+		}
+		return true;
 	}
 }

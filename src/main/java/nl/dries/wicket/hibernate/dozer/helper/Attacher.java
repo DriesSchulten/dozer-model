@@ -60,17 +60,30 @@ public class Attacher<T>
 	/**
 	 * Attach
 	 */
-	public void doAttach()
+	public void doAttachProperties()
 	{
 		if (properties != null)
 		{
 			for (PropertyDefinition def : properties)
 			{
-				if (def.getType() == null)
+				if (def.getCollectionType() == null)
 				{
 					attachProperty(def);
 				}
-				else
+			}
+		}
+	}
+
+	/**
+	 * Attach collections
+	 */
+	public void doAttachCollections()
+	{
+		if (properties != null)
+		{
+			for (PropertyDefinition def : properties)
+			{
+				if (def.getCollectionType() != null)
 				{
 					attachCollection(def);
 				}
@@ -126,18 +139,14 @@ public class Attacher<T>
 		CollectionPersister persister = getCollectionPersister(def);
 		PersistenceContext persistenceContext = sessionImpl.getPersistenceContext();
 
-		PersistentCollection collection = def.getType().createCollection(sessionImpl);
+		PersistentCollection collection = def.getCollectionType().createCollection(sessionImpl);
 		collection.setOwner(toAttach);
 		collection.setSnapshot(def.getOwnerId(), def.getRole(), null); // Sort of 'fake' state...
+
 		persistenceContext.addUninitializedCollection(persister, collection, def.getOwnerId());
 
-		// Register the owning entity otherwise the collection wil be seen as unreferenced when Hibernate flushes
-		persistenceContext.addEntity(
-			new EntityKey(def.getOwnerId(), sessionImpl.getFactory().getEntityPersister(def.getOwner().getName()),
-				EntityMode.POJO), toAttach);
-
 		// Restore value
-		setProperty(def.getProperty(), collection.getValue());
+		setProperty(def.getProperty(), collection);
 	}
 
 	/**

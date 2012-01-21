@@ -3,6 +3,8 @@ package nl.dries.wicket.hibernate.dozer.model;
 import javax.persistence.Entity;
 import javax.persistence.ManyToOne;
 
+import org.hibernate.Hibernate;
+
 /**
  * @author dries
  */
@@ -59,7 +61,7 @@ public class Company extends AbstractOrganization
 		{
 			return false;
 		}
-		if (getClass() != obj.getClass())
+		if (Hibernate.getClass(this) != Hibernate.getClass(obj))
 		{
 			return false;
 		}
