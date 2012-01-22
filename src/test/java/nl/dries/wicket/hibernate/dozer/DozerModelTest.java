@@ -5,6 +5,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -256,6 +257,41 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 		getSession().clear();
 
 		return root;
+	}
+
+	/**
+	 * Test
+	 */
+	@Test
+	public void testListModel()
+	{
+		Person p1 = new Person();
+		p1.setId(1L);
+		p1.setName("p1");
+		getSession().saveOrUpdate(p1);
+
+		Person p2 = new Person();
+		p2.setId(2L);
+		p2.setName("p2");
+		getSession().saveOrUpdate(p2);
+
+		getSession().flush();
+		getSession().clear();
+
+		List<Person> list = new ArrayList<>();
+		list.add(p1);
+		list.add(p2);
+
+		DozerListModel<Person> model = new DozerListModel<>(list);
+		model.detach();
+
+		assertEquals(list, model.getObject());
+
+		list = new ArrayList<>();
+		model.setObject(list);
+		model.detach();
+
+		assertEquals(list, model.getObject());
 	}
 
 	/**

@@ -48,16 +48,15 @@ public class DozerListModel<T> implements IModel<List<T>>
 	 */
 	private void innerSet(List<T> objects)
 	{
+		models = null;
+
 		if (objects != null)
 		{
+			models = new ArrayList<>();
 			for (T obj : objects)
 			{
 				models.add(new DozerModel<>(obj));
 			}
-		}
-		else
-		{
-			models = new ArrayList<>();
 		}
 	}
 
@@ -82,7 +81,7 @@ public class DozerListModel<T> implements IModel<List<T>>
 	@Override
 	public List<T> getObject()
 	{
-		if (models != null && !models.isEmpty())
+		if (models != null)
 		{
 			List<T> objects = new ArrayList<>(models.size());
 			for (DozerModel<T> model : models)
