@@ -3,6 +3,7 @@ package nl.dries.wicket.hibernate.dozer.helper;
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 import javax.persistence.Id;
 
@@ -11,8 +12,6 @@ import nl.dries.wicket.hibernate.dozer.properties.AbstractPropertyDefinition;
 import nl.dries.wicket.hibernate.dozer.properties.CollectionPropertyDefinition;
 import nl.dries.wicket.hibernate.dozer.properties.SimplePropertyDefinition;
 
-import org.apache.commons.beanutils.MethodUtils;
-import org.apache.commons.lang.WordUtils;
 import org.dozer.CustomFieldMapper;
 import org.dozer.classmap.ClassMap;
 import org.dozer.fieldmap.FieldMap;
@@ -118,22 +117,21 @@ public class HibernateFieldMapper implements CustomFieldMapper
 		}
 		else
 		{
-			Field idField = getIdField(source.getClass());
-			if (idField != null)
+			try
 			{
-				String getter = "get" + WordUtils.capitalize(idField.getName());
-				try
+				Method idGetter = getIdMethod(source.getClass());
+				if (idGetter != null)
 				{
-					id = (Serializable) MethodUtils.invokeMethod(source, getter, null);
+					id = (Serializable) idGetter.invoke(source, new Object[] {});
 				}
-				catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e)
+				else
 				{
-					LOG.error(String.format("No getter found for @Id field %s", idField.getName()), e);
+					throw new RuntimeException("Hibernate object, but no @Id field found " + source.getClass());
 				}
 			}
-			else
+			catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException | SecurityException e)
 			{
-				throw new RuntimeException("Hibernate object, but no @Id field found " + source.getClass());
+				LOG.error(String.format("Could not invoke getter for id value, ", source.getClass()), e);
 			}
 		}
 
@@ -141,15 +139,18 @@ public class HibernateFieldMapper implements CustomFieldMapper
 	}
 
 	/**
-	 * Returns a {@link Field} that contains the {@link Id} annotation
+	 * Returns a {@link Method} that contains the {@link Id} annotation (of its field has it)
 	 * 
 	 * @param clazz
 	 *            the {@link Class} to search
-	 * @return found {@link Field} or <code>null</code>
+	 * @return found {@link Method} or <code>null</code>
+	 * @throws SecurityException
+	 * @throws NoSuchMethodException
 	 */
-	private Field getIdField(Class<?> clazz)
+	private Method getIdMethod(Class<?> clazz) throws NoSuchMethodException, SecurityException
 	{
 		Field field = null;
+		Method method = null;
 
 		if (clazz != Object.class)
 		{
@@ -160,13 +161,39 @@ public class HibernateFieldMapper implements CustomFieldMapper
 					field = f;
 				}
 			}
+
+			if (field == null)
+			{
+				for (Method m : clazz.getDeclaredMethods())
+				{
+					if (m.getAnnotation(Id.class) != null)
+					{
+						method = m;
+					}
+				}
+			}
 		}
 
-		if (field == null)
+		if (method == null && field != null)
 		{
-			field = getIdField(clazz.getSuperclass());
+			method = clazz.getDeclaredMethod(toGetterMethod(field.getName()), new Class<?>[] {});
+		}
+		else
+		{
+			method = getIdMethod(clazz.getSuperclass());
 		}
 
-		return field;
+		return method;
+	}
+
+	/**
+	 * Construct a getter definition for a given field
+	 * 
+	 * @param field
+	 * @return get[F]ield
+	 */
+	private String toGetterMethod(String field)
+	{
+		return "get" + Character.toUpperCase(field.charAt(0)) + field.substring(1);
 	}
 }
