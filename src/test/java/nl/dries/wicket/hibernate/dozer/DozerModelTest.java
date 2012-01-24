@@ -236,6 +236,56 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 	}
 
 	/**
+	 * Multiple load
+	 */
+	@Test
+	public void testMultipleLoad()
+	{
+		Person person = new Person();
+		person.setId(1L);
+		person.setName("person");
+		getSession().saveOrUpdate(person);
+
+		DozerModel<Person> model = new DozerModel<>(person);
+		model.detach();
+
+		getSession().flush();
+		getSession().clear();
+		closeSession();
+		openSession();
+
+		model.getObject().setName("edited");
+		Person loaded = (Person) getSession().load(Person.class, 1L);
+		getSession().saveOrUpdate(loaded);
+		getSession().saveOrUpdate(model.getObject());
+		getSession().flush();
+
+		loaded = (Person) getSession().load(Person.class, 1L);
+		assertEquals("edited", loaded.getName());
+	}
+
+	@Test
+	public void testEvictUnique()
+	{
+		Person person = new Person();
+		person.setId(1L);
+		person.setName("person");
+		getSession().saveOrUpdate(person);
+
+		getSession().flush();
+		getSession().clear();
+		closeSession();
+		openSession();
+
+		person = (Person) getSession().load(Person.class, 1L);
+		getSession().evict(person);
+		getSession().clear();
+
+		getSession().load(Person.class, 1L);
+		getSession().saveOrUpdate(person);
+	}
+
+	/**
 	 * @return root node
 	 */
 	private AbstractTreeObject buildTree()
