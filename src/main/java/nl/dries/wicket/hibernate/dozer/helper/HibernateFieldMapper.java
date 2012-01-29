@@ -179,7 +179,7 @@ public class HibernateFieldMapper implements CustomFieldMapper
 		{
 			method = clazz.getDeclaredMethod(toGetterMethod(field.getName()), new Class<?>[] {});
 		}
-		else
+		else if (method == null)
 		{
 			method = getIdMethod(clazz.getSuperclass());
 		}
