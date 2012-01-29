@@ -193,6 +193,10 @@ public class DozerModel<T> implements IModel<T>
 	{
 		if (object != null && detachedObject == null)
 		{
+			// Reset previous detached state
+			detachedProperties = null;
+			detachedCollections = null;
+
 			if (object instanceof HibernateProxy)
 			{
 				HibernateProxy proxy = (HibernateProxy) object;
