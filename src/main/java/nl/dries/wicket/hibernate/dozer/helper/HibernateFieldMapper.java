@@ -18,6 +18,7 @@ import org.dozer.fieldmap.FieldMap;
 import org.hibernate.Hibernate;
 import org.hibernate.collection.PersistentCollection;
 import org.hibernate.collection.PersistentSet;
+import org.hibernate.collection.PersistentSortedSet;
 import org.hibernate.proxy.HibernateProxy;
 import org.hibernate.proxy.LazyInitializer;
 import org.slf4j.Logger;
@@ -65,7 +66,7 @@ public class HibernateFieldMapper implements CustomFieldMapper
 			if (sourceFieldValue instanceof PersistentCollection)
 			{
 				final CollectionType type;
-				if (sourceFieldValue instanceof PersistentSet)
+				if (sourceFieldValue instanceof PersistentSortedSet)
 				{
 					type = CollectionType.SORTED_SET;
 				}
