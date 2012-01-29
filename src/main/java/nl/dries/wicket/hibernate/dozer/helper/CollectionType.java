@@ -70,4 +70,31 @@ public enum CollectionType
 
 		return collection;
 	}
+
+	/**
+	 * Determine collection type based on input value
+	 * 
+	 * @param sourceFieldValue
+	 *            the input {@link PersistentCollection}
+	 * @return {@link CollectionType}
+	 */
+	public static CollectionType determineType(PersistentCollection sourceFieldValue)
+	{
+		final CollectionType type;
+
+		if (sourceFieldValue instanceof PersistentSortedSet)
+		{
+			type = CollectionType.SORTED_SET;
+		}
+		else if (sourceFieldValue instanceof PersistentSet)
+		{
+			type = CollectionType.SET;
+		}
+		else
+		{
+			type = CollectionType.LIST;
+		}
+
+		return type;
+	}
 }

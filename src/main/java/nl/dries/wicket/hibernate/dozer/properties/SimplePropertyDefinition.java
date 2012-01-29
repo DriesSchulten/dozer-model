@@ -15,7 +15,7 @@ public class SimplePropertyDefinition extends AbstractPropertyDefinition
 	private static final long serialVersionUID = 1L;
 
 	/** Hibernate property */
-	private HibernateProperty hibernateProperty;
+	private final HibernateProperty hibernateProperty;
 
 	/**
 	 * Construct
@@ -42,14 +42,5 @@ public class SimplePropertyDefinition extends AbstractPropertyDefinition
 	public HibernateProperty getHibernateProperty()
 	{
 		return hibernateProperty;
-	}
-
-	/**
-	 * @param hibernateProperty
-	 *            the hibernateProperty to set
-	 */
-	public void setHibernateProperty(HibernateProperty hibernateProperty)
-	{
-		this.hibernateProperty = hibernateProperty;
 	}
 }

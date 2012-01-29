@@ -17,8 +17,6 @@ import org.dozer.classmap.ClassMap;
 import org.dozer.fieldmap.FieldMap;
 import org.hibernate.Hibernate;
 import org.hibernate.collection.PersistentCollection;
-import org.hibernate.collection.PersistentSet;
-import org.hibernate.collection.PersistentSortedSet;
 import org.hibernate.proxy.HibernateProxy;
 import org.hibernate.proxy.LazyInitializer;
 import org.slf4j.Logger;
@@ -58,6 +56,8 @@ public class HibernateFieldMapper implements CustomFieldMapper
 	public boolean mapField(Object source, Object destination, Object sourceFieldValue, ClassMap classMap,
 		FieldMap fieldMapping)
 	{
+		boolean mapped = false;
+
 		if (!Hibernate.isInitialized(sourceFieldValue))
 		{
 			final AbstractPropertyDefinition def;
@@ -65,22 +65,9 @@ public class HibernateFieldMapper implements CustomFieldMapper
 			// Collection
 			if (sourceFieldValue instanceof PersistentCollection)
 			{
-				final CollectionType type;
-				if (sourceFieldValue instanceof PersistentSortedSet)
-				{
-					type = CollectionType.SORTED_SET;
-				}
-				else if (sourceFieldValue instanceof PersistentSet)
-				{
-					type = CollectionType.SET;
-				}
-				else
-				{
-					type = CollectionType.LIST;
-				}
-
 				def = new CollectionPropertyDefinition((Class<? extends Serializable>) destination.getClass(),
-					getObjectId(source), fieldMapping.getSrcFieldName(), type);
+					getObjectId(source), fieldMapping.getSrcFieldName(),
+					CollectionType.determineType((PersistentCollection) sourceFieldValue));
 			}
 			// Other
 			else
@@ -94,10 +81,10 @@ public class HibernateFieldMapper implements CustomFieldMapper
 
 			model.addDetachedProperty(destination, def);
 
-			return true;
+			mapped = true;
 		}
 
-		return false;
+		return mapped;
 	}
 
 	/**

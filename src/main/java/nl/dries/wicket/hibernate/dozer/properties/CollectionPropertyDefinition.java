@@ -16,7 +16,7 @@ public class CollectionPropertyDefinition extends AbstractPropertyDefinition
 	private static final long serialVersionUID = 1L;
 
 	/** Collection type */
-	private CollectionType type;
+	private final CollectionType type;
 
 	/**
 	 * Construct
@@ -43,15 +43,6 @@ public class CollectionPropertyDefinition extends AbstractPropertyDefinition
 	public CollectionType getCollectionType()
 	{
 		return type;
-	}
-
-	/**
-	 * @param type
-	 *            the type to set
-	 */
-	public void setType(CollectionType type)
-	{
-		this.type = type;
 	}
 
 	/**
