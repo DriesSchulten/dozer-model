@@ -286,7 +286,7 @@ public class DozerModel<T> implements IModel<T>
 		{
 			return false;
 		}
-		if (obj.getClass().isAssignableFrom(IModel.class))
+		if (!IModel.class.isAssignableFrom(obj.getClass()))
 		{
 			return false;
 		}
