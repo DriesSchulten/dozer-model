@@ -8,18 +8,15 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import nl.dries.wicket.hibernate.dozer.helper.Attacher;
-import nl.dries.wicket.hibernate.dozer.helper.HibernateFieldMapper;
+import nl.dries.wicket.hibernate.dozer.helper.ModelCallback;
 import nl.dries.wicket.hibernate.dozer.properties.AbstractPropertyDefinition;
 import nl.dries.wicket.hibernate.dozer.properties.CollectionPropertyDefinition;
 import nl.dries.wicket.hibernate.dozer.properties.SimplePropertyDefinition;
+import nl.dries.wicket.hibernate.dozer.walker.ObjectWalker;
 
 import org.apache.wicket.injection.Injector;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.dozer.DozerBeanMapper;
-import org.dozer.Mapper;
-import org.dozer.util.DozerConstants;
-import org.hibernate.Hibernate;
 import org.hibernate.proxy.HibernateProxy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,10 +35,13 @@ import org.slf4j.LoggerFactory;
  * @param <T>
  *            type of model object
  */
-public class DozerModel<T> implements IModel<T>
+public class DozerModel<T> implements IModel<T>, ModelCallback
 {
 	/** Default */
 	private static final long serialVersionUID = 1L;
+
+	/** */
+	private static final String CGLIB_ID = "$$EnhancerByCGLIB$$";
 
 	/** Logger */
 	private static final Logger LOG = LoggerFactory.getLogger(DozerModel.class);
@@ -51,9 +51,6 @@ public class DozerModel<T> implements IModel<T>
 
 	/** Detached object instance */
 	private T detachedObject;
-
-	/** The object's {@link Class} */
-	private Class<T> objectClass;
 
 	/** Map containing detached properties */
 	private Map<Object, List<SimplePropertyDefinition>> detachedProperties;
@@ -70,7 +67,6 @@ public class DozerModel<T> implements IModel<T>
 	 * 
 	 * @param object
 	 */
-	@SuppressWarnings("unchecked")
 	public DozerModel(T object)
 	{
 		this();
@@ -79,12 +75,10 @@ public class DozerModel<T> implements IModel<T>
 
 		if (object != null)
 		{
-			if (object.getClass().getName().contains(DozerConstants.CGLIB_ID))
+			if (object.getClass().getName().contains(CGLIB_ID))
 			{
 				LOG.warn("Given object is a Cglib proxy this can cause unexpected behavior, " + object);
 			}
-
-			this.objectClass = Hibernate.getClass(object);
 		}
 	}
 
@@ -100,7 +94,6 @@ public class DozerModel<T> implements IModel<T>
 		this();
 
 		this.object = (T) sessionFinder.getSession().load(objectClass, id);
-		this.objectClass = objectClass;
 	}
 
 	/**
@@ -203,20 +196,18 @@ public class DozerModel<T> implements IModel<T>
 				object = (T) proxy.getHibernateLazyInitializer().getImplementation();
 			}
 
-			DozerBeanMapper mapper = createMapper();
-			detachedObject = mapper.map(object, objectClass);
+			ObjectWalker<T> walker = new ObjectWalker<>(object, sessionFinder, this);
+			detachedObject = walker.walk();
+
 			object = null;
 		}
 	}
 
 	/**
-	 * Add a detached property
-	 * 
-	 * @param object
-	 *            the owner (Dozer converted instance, <b>NO</b> Hibernate proxy)
-	 * @param property
-	 *            the {@link AbstractPropertyDefinition} it maps to
+	 * @see nl.dries.wicket.hibernate.dozer.helper.ModelCallback#addDetachedProperty(java.lang.Object,
+	 *      nl.dries.wicket.hibernate.dozer.properties.AbstractPropertyDefinition)
 	 */
+	@Override
 	public void addDetachedProperty(Object owner, AbstractPropertyDefinition def)
 	{
 		if (def instanceof SimplePropertyDefinition)
@@ -247,16 +238,6 @@ public class DozerModel<T> implements IModel<T>
 
 			detachedCollections.get(owner).add((CollectionPropertyDefinition) def);
 		}
-	}
-
-	/**
-	 * @return {@link Mapper} instance
-	 */
-	private DozerBeanMapper createMapper()
-	{
-		DozerBeanMapper mapper = new DozerBeanMapper();
-		mapper.setCustomFieldMapper(new HibernateFieldMapper(this));
-		return mapper;
 	}
 
 	/**

@@ -3,7 +3,13 @@ package nl.dries.wicket.hibernate.dozer;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -51,9 +57,9 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 
 		DozerModel<Person> model = new DozerModel<>(person);
 		model.detach();
+		model = serialize(model);
 
 		assertEquals(person, model.getObject());
-		assertFalse(person == model.getObject()); // Different instance
 	}
 
 	/**
@@ -79,8 +85,9 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 		adres.setPerson((Person) getSession().load(Person.class, 1L)); // Forcing proxy
 		DozerModel<Adres> model = new DozerModel<>(adres);
 		model.detach();
+		model = serialize(model);
 
-		assertEquals(adres, model.getObject());
+		assertEquals(getSession().load(Adres.class, 1L), model.getObject());
 		assertEquals(person, model.getObject().getPerson());
 	}
 
@@ -108,6 +115,7 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 
 		DozerModel<Person> model = new DozerModel<>(person);
 		model.detach();
+		model = serialize(model);
 
 		closeSession();
 		openSession();
@@ -126,6 +134,7 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 
 		model.getObject().getName(); // Root initialization
 		model.detach();
+		model = serialize(model);
 
 		assertEquals(1, model.getObject().getChildren().size());
 		assertEquals(1, model.getObject().getChildren().get(0).getChildren().size());
@@ -144,6 +153,7 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 
 		DozerModel<DescTreeObject> model = new DozerModel<>(child);
 		model.detach();
+		model = serialize(model);
 
 		assertEquals(1, model.getObject().getChildren().size());
 		assertEquals("root", model.getObject().getParent().getName());
@@ -157,6 +167,7 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 	{
 		DozerModel<AbstractTreeObject> model = new DozerModel<>(buildTree());
 		model.detach();
+		model = serialize(model);
 	}
 
 	/**
@@ -180,6 +191,7 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 
 		DozerModel<Person> model = new DozerModel<>(person);
 		model.detach();
+		model = serialize(model);
 
 		assertEquals(company, model.getObject().getOrganization());
 		assertEquals(adres, ((Company) model.getObject().getOrganization()).getAdres());
@@ -208,6 +220,7 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 
 		DozerModel<Person> model = new DozerModel<>((Person) getSession().load(Person.class, 1L));
 		model.detach();
+		model = serialize(model);
 
 		// Trigger attach
 		model.getObject();
@@ -248,6 +261,7 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 
 		DozerModel<Person> model = new DozerModel<>(person);
 		model.detach();
+		model = serialize(model);
 
 		getSession().flush();
 		getSession().clear();
@@ -334,12 +348,14 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 
 		DozerListModel<Person> model = new DozerListModel<>(list);
 		model.detach();
+		model = serialize(model);
 
 		assertEquals(list, model.getObject());
 
 		list = new ArrayList<>();
 		model.setObject(list);
 		model.detach();
+		model = serialize(model);
 
 		assertEquals(list, model.getObject());
 	}
@@ -352,5 +368,34 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 	{
 		return Arrays.asList(Adres.class, Person.class, AbstractTreeObject.class, DescTreeObject.class,
 			RootTreeObject.class, AbstractOrganization.class, Company.class);
+	}
+
+	/**
+	 * @param in
+	 *            input object
+	 * @return object
+	 */
+	@SuppressWarnings("unchecked")
+	private <T extends Serializable> T serialize(T in)
+	{
+		T out = null;
+		try
+		{
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			ObjectOutputStream os = new ObjectOutputStream(baos);
+			os.writeObject(in);
+
+			byte[] bytes = baos.toByteArray();
+
+			ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
+			ObjectInputStream is = new ObjectInputStream(bais);
+			out = (T) is.readObject();
+		}
+		catch (IOException | ClassNotFoundException e)
+		{
+			fail(e.getMessage());
+		}
+
+		return out;
 	}
 }

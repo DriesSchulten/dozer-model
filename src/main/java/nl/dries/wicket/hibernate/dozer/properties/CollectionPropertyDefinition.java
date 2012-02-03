@@ -3,7 +3,7 @@ package nl.dries.wicket.hibernate.dozer.properties;
 import java.io.Serializable;
 import java.lang.reflect.Field;
 
-import nl.dries.wicket.hibernate.dozer.helper.CollectionType;
+import nl.dries.wicket.hibernate.dozer.helper.HibernateCollectionType;
 
 /**
  * Collecition property definition
@@ -16,7 +16,7 @@ public class CollectionPropertyDefinition extends AbstractPropertyDefinition
 	private static final long serialVersionUID = 1L;
 
 	/** Collection type */
-	private final CollectionType type;
+	private final HibernateCollectionType type;
 
 	/**
 	 * Construct
@@ -28,10 +28,10 @@ public class CollectionPropertyDefinition extends AbstractPropertyDefinition
 	 * @param property
 	 *            the name of the field
 	 * @param type
-	 *            {@link CollectionType}
+	 *            {@link HibernateCollectionType}
 	 */
 	public CollectionPropertyDefinition(Class<? extends Serializable> owner, Serializable ownerId, String property,
-		CollectionType type)
+		HibernateCollectionType type)
 	{
 		super(owner, ownerId, property);
 		this.type = type;
@@ -40,7 +40,7 @@ public class CollectionPropertyDefinition extends AbstractPropertyDefinition
 	/**
 	 * @return the type
 	 */
-	public CollectionType getCollectionType()
+	public HibernateCollectionType getCollectionType()
 	{
 		return type;
 	}

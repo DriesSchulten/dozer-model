@@ -109,41 +109,41 @@ public class Adres implements Serializable
 		{
 			return false;
 		}
-		if (Hibernate.getClass(this) != Hibernate.getClass(obj))
+		if (getClass() != Hibernate.getClass(obj))
 		{
 			return false;
 		}
 		Adres other = (Adres) obj;
-		if (id == null)
+		if (getId() == null)
 		{
-			if (other.id != null)
+			if (other.getId() != null)
 			{
 				return false;
 			}
 		}
-		else if (!id.equals(other.id))
+		else if (!getId().equals(other.getId()))
 		{
 			return false;
 		}
-		if (person == null)
+		if (getPerson() == null)
 		{
-			if (other.person != null)
+			if (other.getPerson() != null)
 			{
 				return false;
 			}
 		}
-		else if (!person.equals(other.person))
+		else if (!getPerson().equals(other.getPerson()))
 		{
 			return false;
 		}
-		if (street == null)
+		if (getStreet() == null)
 		{
-			if (other.street != null)
+			if (other.getStreet() != null)
 			{
 				return false;
 			}
 		}
-		else if (!street.equals(other.street))
+		else if (!getStreet().equals(other.getStreet()))
 		{
 			return false;
 		}

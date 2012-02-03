@@ -9,7 +9,7 @@ import org.hibernate.collection.PersistentSortedSet;
 import org.junit.Test;
 
 /**
- * {@link CollectionType} test
+ * {@link HibernateCollectionType} test
  * 
  * @author dries
  */
@@ -21,9 +21,9 @@ public class CollectionTypeTest
 	@Test
 	public void testConstructPersistentInstance()
 	{
-		assertNotNull(CollectionType.LIST.createCollection(null));
-		assertNotNull(CollectionType.SET.createCollection(null));
-		assertNotNull(CollectionType.SORTED_SET.createCollection(null));
+		assertNotNull(HibernateCollectionType.LIST.createCollection(null));
+		assertNotNull(HibernateCollectionType.SET.createCollection(null));
+		assertNotNull(HibernateCollectionType.SORTED_SET.createCollection(null));
 	}
 
 	/**
@@ -32,8 +32,8 @@ public class CollectionTypeTest
 	@Test
 	public void testDetermineType()
 	{
-		assertEquals(CollectionType.LIST, CollectionType.determineType(new PersistentBag()));
-		assertEquals(CollectionType.SET, CollectionType.determineType(new PersistentSet()));
-		assertEquals(CollectionType.SORTED_SET, CollectionType.determineType(new PersistentSortedSet()));
+		assertEquals(HibernateCollectionType.LIST, HibernateCollectionType.determineType(new PersistentBag()));
+		assertEquals(HibernateCollectionType.SET, HibernateCollectionType.determineType(new PersistentSet()));
+		assertEquals(HibernateCollectionType.SORTED_SET, HibernateCollectionType.determineType(new PersistentSortedSet()));
 	}
 }

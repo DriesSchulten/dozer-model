@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory;
  * 
  * @author dries
  */
-public enum CollectionType
+public enum HibernateCollectionType
 {
 	/** */
 	LIST(PersistentBag.class),
@@ -26,7 +26,7 @@ public enum CollectionType
 	SORTED_SET(PersistentSortedSet.class);
 
 	/** Logger */
-	private static final Logger LOG = LoggerFactory.getLogger(CollectionType.class);
+	private static final Logger LOG = LoggerFactory.getLogger(HibernateCollectionType.class);
 
 	/** Specific Hibernate collection class */
 	private Class<? extends PersistentCollection> hibernateCollectionClass;
@@ -36,7 +36,7 @@ public enum CollectionType
 	 * 
 	 * @param hibernateCollectionClass
 	 */
-	private CollectionType(Class<? extends PersistentCollection> hibernateCollectionClass)
+	private HibernateCollectionType(Class<? extends PersistentCollection> hibernateCollectionClass)
 	{
 		this.hibernateCollectionClass = hibernateCollectionClass;
 	}
@@ -76,23 +76,23 @@ public enum CollectionType
 	 * 
 	 * @param sourceFieldValue
 	 *            the input {@link PersistentCollection}
-	 * @return {@link CollectionType}
+	 * @return {@link HibernateCollectionType}
 	 */
-	public static CollectionType determineType(PersistentCollection sourceFieldValue)
+	public static HibernateCollectionType determineType(PersistentCollection sourceFieldValue)
 	{
-		final CollectionType type;
+		final HibernateCollectionType type;
 
 		if (sourceFieldValue instanceof PersistentSortedSet)
 		{
-			type = CollectionType.SORTED_SET;
+			type = HibernateCollectionType.SORTED_SET;
 		}
 		else if (sourceFieldValue instanceof PersistentSet)
 		{
-			type = CollectionType.SET;
+			type = HibernateCollectionType.SET;
 		}
 		else
 		{
-			type = CollectionType.LIST;
+			type = HibernateCollectionType.LIST;
 		}
 
 		return type;
