@@ -2,6 +2,10 @@ package nl.dries.wicket.hibernate.dozer.helper;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.TreeSet;
 
 import org.hibernate.collection.PersistentBag;
 import org.hibernate.collection.PersistentCollection;
@@ -19,11 +23,11 @@ import org.slf4j.LoggerFactory;
 public enum HibernateCollectionType
 {
 	/** */
-	LIST(PersistentBag.class),
+	LIST(PersistentBag.class, ArrayList.class),
 	/** */
-	SET(PersistentSet.class),
+	SET(PersistentSet.class, HashSet.class),
 	/** */
-	SORTED_SET(PersistentSortedSet.class);
+	SORTED_SET(PersistentSortedSet.class, TreeSet.class);
 
 	/** Logger */
 	private static final Logger LOG = LoggerFactory.getLogger(HibernateCollectionType.class);
@@ -31,14 +35,21 @@ public enum HibernateCollectionType
 	/** Specific Hibernate collection class */
 	private Class<? extends PersistentCollection> hibernateCollectionClass;
 
+	/** Plain 'Java collections' type */
+	@SuppressWarnings("rawtypes")
+	private Class<? extends Collection> plainTypeClass;
+
 	/**
 	 * Construct
 	 * 
 	 * @param hibernateCollectionClass
+	 * @param plainTypeClass
 	 */
-	private HibernateCollectionType(Class<? extends PersistentCollection> hibernateCollectionClass)
+	private HibernateCollectionType(Class<? extends PersistentCollection> hibernateCollectionClass,
+		@SuppressWarnings("rawtypes") Class<? extends Collection> plainTypeClass)
 	{
 		this.hibernateCollectionClass = hibernateCollectionClass;
+		this.plainTypeClass = plainTypeClass;
 	}
 
 	/**
@@ -66,6 +77,35 @@ public enum HibernateCollectionType
 			| InvocationTargetException e)
 		{
 			LOG.error("Cannot create collection instance of type " + hibernateCollectionClass, e);
+		}
+
+		return collection;
+	}
+
+	/**
+	 * Creates a plain Java collection instance based on a {@link PersistentCollection} one
+	 * 
+	 * @param persistentCollection
+	 *            the {@link PersistentCollection}
+	 * @return plain collection
+	 */
+	public Collection<?> createPlainCollection(PersistentCollection persistentCollection)
+	{
+		Collection<?> collection = null;
+		try
+		{
+			@SuppressWarnings("rawtypes")
+			Constructor<? extends Collection> constructor = plainTypeClass.getConstructor(Collection.class);
+			collection = constructor.newInstance(persistentCollection);
+		}
+		catch (NoSuchMethodException | SecurityException e)
+		{
+			LOG.error("Colection type {} has no Collection constructor", plainTypeClass);
+		}
+		catch (InstantiationException | IllegalAccessException | IllegalArgumentException
+			| InvocationTargetException e)
+		{
+			LOG.error("Cannot create collection instance of type " + plainTypeClass, e);
 		}
 
 		return collection;

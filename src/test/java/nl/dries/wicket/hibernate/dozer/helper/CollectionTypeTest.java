@@ -34,6 +34,7 @@ public class CollectionTypeTest
 	{
 		assertEquals(HibernateCollectionType.LIST, HibernateCollectionType.determineType(new PersistentBag()));
 		assertEquals(HibernateCollectionType.SET, HibernateCollectionType.determineType(new PersistentSet()));
-		assertEquals(HibernateCollectionType.SORTED_SET, HibernateCollectionType.determineType(new PersistentSortedSet()));
+		assertEquals(HibernateCollectionType.SORTED_SET,
+			HibernateCollectionType.determineType(new PersistentSortedSet()));
 	}
 }
