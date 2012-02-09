@@ -80,7 +80,7 @@ public class ObjectWalker<T>
 	 */
 	public T walk()
 	{
-		walk(root);
+		walk(deproxy(root));
 		return root;
 	}
 
@@ -93,7 +93,6 @@ public class ObjectWalker<T>
 	private void walk(Object object)
 	{
 		Set<Object> toWalk = new HashSet<>();
-		object = deproxy(object);
 		ClassMetadata metadata = factory.getClassMetadata(object.getClass());
 
 		if (metadata != null)
@@ -115,7 +114,8 @@ public class ObjectWalker<T>
 						}
 						else if (value instanceof PersistentCollection)
 						{
-							convertToPlainCollection(object, propertyName, value);
+							handleInitializedCollection(object, toWalk,
+								convertToPlainCollection(object, propertyName, value));
 						}
 						else
 						{
@@ -139,6 +139,29 @@ public class ObjectWalker<T>
 	}
 
 	/**
+	 * Handles a initialized Hibernate collection value
+	 * 
+	 * @param object
+	 *            the containing object
+	 * @param toWalk
+	 *            set with objects to visit
+	 * @param value
+	 *            the collection value
+	 */
+	public void handleInitializedCollection(Object object, Set<Object> toWalk, Collection<?> value)
+	{
+		Iterator<?> iter = value.iterator();
+		while (iter.hasNext())
+		{
+			Object next = deproxy(iter.next());
+			if (!seen.contains(next))
+			{
+				toWalk.add(next);
+			}
+		}
+	}
+
+	/**
 	 * Convert Hibernate collection to a plain collection type
 	 * 
 	 * @param object
@@ -149,7 +172,7 @@ public class ObjectWalker<T>
 	 *            input collection
 	 * @return plain collection type
 	 */
-	private void convertToPlainCollection(Object object, String propertyName, Object value)
+	private Collection<?> convertToPlainCollection(Object object, String propertyName, Object value)
 	{
 		if (value instanceof PersistentSet)
 		{
@@ -165,6 +188,7 @@ public class ObjectWalker<T>
 		}
 
 		setValue(object, propertyName, value);
+		return (Collection<?>) value;
 	}
 
 	/**
@@ -252,7 +276,8 @@ public class ObjectWalker<T>
 	}
 
 	/**
-	 * Deproxy a Hibernate enhanced object
+	 * Deproxy a Hibernate enhanced object, only call when sure the object is initialized, otherwise (unwanted)
+	 * intialization wil take place
 	 * 
 	 * @param object
 	 *            the input object
