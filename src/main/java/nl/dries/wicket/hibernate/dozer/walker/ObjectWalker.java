@@ -2,9 +2,12 @@ package nl.dries.wicket.hibernate.dozer.walker;
 
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.TreeSet;
 
 import nl.dries.wicket.hibernate.dozer.SessionFinder;
 import nl.dries.wicket.hibernate.dozer.helper.HibernateCollectionType;
@@ -16,7 +19,10 @@ import nl.dries.wicket.hibernate.dozer.properties.SimplePropertyDefinition;
 
 import org.apache.commons.beanutils.PropertyUtils;
 import org.hibernate.Hibernate;
+import org.hibernate.collection.PersistentBag;
 import org.hibernate.collection.PersistentCollection;
+import org.hibernate.collection.PersistentSet;
+import org.hibernate.collection.PersistentSortedSet;
 import org.hibernate.engine.SessionFactoryImplementor;
 import org.hibernate.engine.SessionImplementor;
 import org.hibernate.metadata.ClassMetadata;
@@ -107,6 +113,10 @@ public class ObjectWalker<T>
 						{
 							handleProxy(object, identifier, propertyName, value);
 						}
+						else if (value instanceof PersistentCollection)
+						{
+							convertToPlainCollection(object, propertyName, value);
+						}
 						else
 						{
 							value = deproxy(value);
@@ -126,6 +136,35 @@ public class ObjectWalker<T>
 		{
 			walk(iter.next());
 		}
+	}
+
+	/**
+	 * Convert Hibernate collection to a plain collection type
+	 * 
+	 * @param object
+	 *            the object that owns the property
+	 * @param propertyName
+	 *            the property
+	 * @param value
+	 *            input collection
+	 * @return plain collection type
+	 */
+	private void convertToPlainCollection(Object object, String propertyName, Object value)
+	{
+		if (value instanceof PersistentSet)
+		{
+			value = new HashSet<>((Collection<?>) value);
+		}
+		else if (value instanceof PersistentBag)
+		{
+			value = new ArrayList<>((Collection<?>) value);
+		}
+		else if (value instanceof PersistentSortedSet)
+		{
+			value = new TreeSet<>((Collection<?>) value);
+		}
+
+		setValue(object, propertyName, value);
 	}
 
 	/**
