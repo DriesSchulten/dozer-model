@@ -112,6 +112,10 @@ public class ObjectWalker<T>
 							handleInitializedCollection(object, toWalk,
 								convertToPlainCollection(object, propertyName, value));
 						}
+						else if (value instanceof Collection<?>)
+						{
+							handlePlainCollection(toWalk, (Collection<?>) value);
+						}
 						else
 						{
 							value = deproxy(value);
@@ -130,6 +134,27 @@ public class ObjectWalker<T>
 		for (Iterator<Object> iter = toWalk.iterator(); iter.hasNext();)
 		{
 			walk(iter.next());
+		}
+	}
+
+	/**
+	 * Add a plain collection to the visitable objects
+	 * 
+	 * @param toWalk
+	 *            set with walkable objects
+	 * @param collection
+	 *            the collection to add
+	 */
+	public void handlePlainCollection(Set<Object> toWalk, Collection<?> collection)
+	{
+		Iterator<?> iter = collection.iterator();
+		while (iter.hasNext())
+		{
+			Object next = iter.next();
+			if (!seen.contains(next))
+			{
+				toWalk.add(next);
+			}
 		}
 	}
 
@@ -170,7 +195,8 @@ public class ObjectWalker<T>
 	private Collection<?> convertToPlainCollection(Object object, String propertyName, Object value)
 	{
 		PersistentCollection collection = (PersistentCollection) value;
-		Collection<?> plainCollection = HibernateCollectionType.determineType(collection).createPlainCollection(collection);
+		Collection<?> plainCollection = HibernateCollectionType.determineType(collection).createPlainCollection(
+			collection);
 		setValue(object, propertyName, plainCollection);
 		return plainCollection;
 	}
