@@ -8,6 +8,43 @@
 	<packaging>jar</packaging>
 
 	<name>Wicket dozer Hibernate model</name>
+	
+	<developers>
+		<developer>
+			<id>schulten</id>
+			<name>Dries Schulten</name>
+			<email>dries.schulten@topicus.nl</email>
+			<organization>Topicus Zorg</organization>
+			<organizationUrl>http://www.topicuszorg.nl/</organizationUrl>
+		</developer>
+	</developers>
+	
+	<distributionManagement>
+		<repository>
+			<id>deployment.external</id>
+			<name>external Release Repository</name>
+			<url>http://vaatwasser:8081/nexus/content/repositories/external-releases/</url>
+			<uniqueVersion>false</uniqueVersion>
+		</repository>
+		<snapshotRepository>
+			<id>deployment.external</id>
+			<name>external snapshot Repository</name>
+			<url>http://vaatwasser:8081/nexus/content/repositories/external-snapshot//</url>
+			<uniqueVersion>false</uniqueVersion>
+		</snapshotRepository>
+	</distributionManagement>
+	
+	<scm>
+		<connection>
+			scm:git:git://github.com/DriesSchulten/dozer-model.git
+		</connection>
+		<developerConnection>
+			scm:git:ssh://git@github.com/DriesSchulten/dozer-model.git
+		</developerConnection>
+		<url>
+			https://github.com/DriesSchulten/dozer-model.git
+		</url>
+	</scm>
 
 	<build>
 		<resources>
