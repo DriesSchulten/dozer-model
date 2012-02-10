@@ -13,5 +13,5 @@ public interface SessionFinder
 	/**
 	 * @return {@link Hibernate} session
 	 */
-	Session getSession();
+	Session getHibernateSession();
 }

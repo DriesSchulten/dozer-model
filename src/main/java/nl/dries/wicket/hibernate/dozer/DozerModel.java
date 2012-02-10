@@ -93,7 +93,7 @@ public class DozerModel<T> implements IModel<T>, ModelCallback
 	{
 		this();
 
-		this.object = (T) sessionFinder.getSession().load(objectClass, id);
+		this.object = (T) sessionFinder.getHibernateSession().load(objectClass, id);
 	}
 
 	/**
@@ -160,7 +160,7 @@ public class DozerModel<T> implements IModel<T>, ModelCallback
 			// Re-attach properties
 			for (Entry<?, ?> entry : detached.entrySet())
 			{
-				list.add(new Attacher<Object>(entry.getKey(), sessionFinder.getSession(),
+				list.add(new Attacher<Object>(entry.getKey(), sessionFinder.getHibernateSession(),
 					(List<? extends AbstractPropertyDefinition>) entry.getValue()));
 			}
 		}

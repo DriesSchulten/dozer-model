@@ -62,7 +62,7 @@ public class ObjectWalker<T>
 	public ObjectWalker(T root, SessionFinder sessionFinder, ModelCallback callback)
 	{
 		this.root = root;
-		this.sessionImpl = (SessionImplementor) sessionFinder.getSession();
+		this.sessionImpl = (SessionImplementor) sessionFinder.getHibernateSession();
 		this.factory = sessionImpl.getFactory();
 		this.callback = callback;
 		this.seen = new HashSet<>();
