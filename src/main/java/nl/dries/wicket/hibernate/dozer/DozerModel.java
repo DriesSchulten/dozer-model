@@ -160,8 +160,8 @@ public class DozerModel<T> implements IModel<T>, ModelCallback
 			// Re-attach properties
 			for (Entry<?, ?> entry : detached.entrySet())
 			{
-				list.add(new Attacher<Object>(entry.getKey(), sessionFinder.getHibernateSession(),
-					(List<? extends AbstractPropertyDefinition>) entry.getValue()));
+				list.add(new Attacher<Object>(entry.getKey(), sessionFinder.getHibernateSession(), new ArrayList<>(
+					(List<? extends AbstractPropertyDefinition>) entry.getValue()), this));
 			}
 		}
 
@@ -237,6 +237,23 @@ public class DozerModel<T> implements IModel<T>, ModelCallback
 			}
 
 			detachedCollections.get(owner).add((CollectionPropertyDefinition) def);
+		}
+	}
+
+	/**
+	 * @see nl.dries.wicket.hibernate.dozer.helper.ModelCallback#removeProperty(java.lang.Object,
+	 *      nl.dries.wicket.hibernate.dozer.properties.CollectionPropertyDefinition)
+	 */
+	@Override
+	public void removeProperty(Object owner, CollectionPropertyDefinition def)
+	{
+		if (detachedCollections != null)
+		{
+			List<CollectionPropertyDefinition> list = detachedCollections.get(owner);
+			if (list != null)
+			{
+				list.remove(def);
+			}
 		}
 	}
 

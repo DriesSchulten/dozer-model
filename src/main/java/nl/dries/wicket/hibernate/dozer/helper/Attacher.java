@@ -1,13 +1,11 @@
 package nl.dries.wicket.hibernate.dozer.helper;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
 import nl.dries.wicket.hibernate.dozer.properties.AbstractPropertyDefinition;
 import nl.dries.wicket.hibernate.dozer.properties.CollectionPropertyDefinition;
 import nl.dries.wicket.hibernate.dozer.properties.SimplePropertyDefinition;
 
-import org.apache.commons.beanutils.PropertyUtils;
 import org.hibernate.EntityMode;
 import org.hibernate.Session;
 import org.hibernate.collection.PersistentCollection;
@@ -17,8 +15,6 @@ import org.hibernate.engine.SessionFactoryImplementor;
 import org.hibernate.engine.SessionImplementor;
 import org.hibernate.persister.collection.CollectionPersister;
 import org.hibernate.persister.entity.EntityPersister;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Hibernate object (re-)attacher
@@ -30,9 +26,6 @@ import org.slf4j.LoggerFactory;
  */
 public class Attacher<T>
 {
-	/** Logger */
-	private static final Logger LOG = LoggerFactory.getLogger(Attacher.class);
-
 	/** The Hibernate session */
 	private final SessionImplementor sessionImpl;
 
@@ -41,6 +34,9 @@ public class Attacher<T>
 
 	/** Properties to attach */
 	private final List<? extends AbstractPropertyDefinition> properties;
+
+	/** Callback to the model */
+	private final ModelCallback callback;
 
 	/**
 	 * Construct
@@ -53,12 +49,15 @@ public class Attacher<T>
 	 *            detached properties
 	 * @param detachedCollections
 	 *            detached collections
+	 * @parma callback the {@link ModelCallback}
 	 */
-	public Attacher(T toAttach, Session session, List<? extends AbstractPropertyDefinition> detachedProperties)
+	public Attacher(T toAttach, Session session, List<? extends AbstractPropertyDefinition> detachedProperties,
+		ModelCallback callback)
 	{
 		this.toAttach = toAttach;
 		this.sessionImpl = (SessionImplementor) session;
 		this.properties = detachedProperties;
+		this.callback = callback;
 	}
 
 	/**
@@ -116,7 +115,7 @@ public class Attacher<T>
 		}
 
 		// Set the property to te real value, or a proxy
-		setProperty(def.getProperty(), instance);
+		ReflectionHelper.setValue(toAttach, def.getProperty(), instance);
 	}
 
 	/**
@@ -127,37 +126,46 @@ public class Attacher<T>
 	 */
 	protected void attach(CollectionPropertyDefinition def)
 	{
-		CollectionPersister persister = getCollectionPersister(def);
-		PersistenceContext persistenceContext = sessionImpl.getPersistenceContext();
+		Object currentValue = ReflectionHelper.getValue(toAttach, def.getProperty());
 
-		PersistentCollection collection = def.getCollectionType().createCollection(sessionImpl);
-		collection.setOwner(toAttach);
-		collection.setSnapshot(def.getOwnerId(), def.getRole(), null); // Sort of 'fake' state...
+		if (!isInitialized(currentValue))
+		{
+			CollectionPersister persister = getCollectionPersister(def);
+			PersistenceContext persistenceContext = sessionImpl.getPersistenceContext();
 
-		persistenceContext.addUninitializedCollection(persister, collection, def.getOwnerId());
+			PersistentCollection collection = def.getCollectionType().createCollection(sessionImpl);
+			collection.setOwner(toAttach);
+			collection.setSnapshot(def.getOwnerId(), def.getRole(), null); // Sort of 'fake' state...
 
-		// Restore value
-		setProperty(def.getProperty(), collection);
+			persistenceContext.addUninitializedCollection(persister, collection, def.getOwnerId());
+
+			// Restore value
+			ReflectionHelper.setValue(toAttach, def.getProperty(), collection);
+		}
+		else
+		{
+			callback.removeProperty(toAttach, def);
+		}
 	}
 
 	/**
-	 * Property set
+	 * Check if the current object is initialized
 	 * 
-	 * @param property
-	 *            the instance variabele name
-	 * @param value
-	 *            the designated value
+	 * @param currentValue
+	 *            the current (collection) object
+	 * @return <code>true</code> when initialized
 	 */
-	private void setProperty(String property, Object value)
+	private boolean isInitialized(Object currentValue)
 	{
-		try
+		boolean initialized = currentValue != null;
+
+		if (currentValue instanceof PersistentCollection)
 		{
-			PropertyUtils.setProperty(toAttach, property, value);
+			PersistentCollection persistentCollection = (PersistentCollection) currentValue;
+			initialized = persistentCollection.wasInitialized();
 		}
-		catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e)
-		{
-			LOG.error("Errer restoring property", e);
-		}
+
+		return initialized;
 	}
 
 	/**

@@ -24,6 +24,7 @@ import nl.dries.wicket.hibernate.dozer.model.Person;
 import nl.dries.wicket.hibernate.dozer.model.RootTreeObject;
 
 import org.apache.wicket.model.Model;
+import org.hibernate.collection.PersistentCollection;
 import org.junit.Test;
 
 /**
@@ -358,6 +359,42 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 		model = serialize(model);
 
 		assertEquals(list, model.getObject());
+	}
+
+	/**
+	 * Intialize a collection multiple times, check nu x-times loading
+	 */
+	@Test
+	public void testMultipleInitialize()
+	{
+		Person person = new Person();
+		person.setId(1L);
+		person.setName("test");
+
+		Adres adres = new Adres();
+		adres.setId(1L);
+		adres.setStreet("street");
+		adres.setPerson(person);
+		person.getAdresses().add(adres);
+		adres = new Adres();
+		adres.setId(2L);
+		adres.setStreet("street 2");
+		adres.setPerson(person);
+		person.getAdresses().add(adres);
+
+		getSession().saveOrUpdate(person);
+		getSession().flush();
+		getSession().clear();
+
+		DozerModel<Person> model = new DozerModel<>(Person.class, 1L);
+		model.detach();
+		model = serialize(model);
+
+		model.getObject();
+		assertFalse(((PersistentCollection) model.getObject().getAdresses()).wasInitialized());
+		model.getObject().getAdresses().size();
+		getSession().flush();
+		assertTrue(((PersistentCollection) model.getObject().getAdresses()).wasInitialized());
 	}
 
 	/**

@@ -1,7 +1,6 @@
 package nl.dries.wicket.hibernate.dozer.walker;
 
 import java.io.Serializable;
-import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -11,11 +10,11 @@ import nl.dries.wicket.hibernate.dozer.SessionFinder;
 import nl.dries.wicket.hibernate.dozer.helper.HibernateCollectionType;
 import nl.dries.wicket.hibernate.dozer.helper.HibernateProperty;
 import nl.dries.wicket.hibernate.dozer.helper.ModelCallback;
+import nl.dries.wicket.hibernate.dozer.helper.ReflectionHelper;
 import nl.dries.wicket.hibernate.dozer.properties.AbstractPropertyDefinition;
 import nl.dries.wicket.hibernate.dozer.properties.CollectionPropertyDefinition;
 import nl.dries.wicket.hibernate.dozer.properties.SimplePropertyDefinition;
 
-import org.apache.commons.beanutils.PropertyUtils;
 import org.hibernate.Hibernate;
 import org.hibernate.collection.PersistentCollection;
 import org.hibernate.engine.SessionFactoryImplementor;
@@ -99,7 +98,7 @@ public class ObjectWalker<T>
 				Type type = metadata.getPropertyType(propertyName);
 				if (type instanceof AssociationType)
 				{
-					Object value = getValue(object, propertyName);
+					Object value = ReflectionHelper.getValue(object, propertyName);
 
 					if (value != null)
 					{
@@ -197,7 +196,7 @@ public class ObjectWalker<T>
 		PersistentCollection collection = (PersistentCollection) value;
 		Collection<?> plainCollection = HibernateCollectionType.determineType(collection).createPlainCollection(
 			collection);
-		setValue(object, propertyName, plainCollection);
+		ReflectionHelper.setValue(object, propertyName, plainCollection);
 		return plainCollection;
 	}
 
@@ -236,53 +235,7 @@ public class ObjectWalker<T>
 		}
 
 		callback.addDetachedProperty(object, def);
-		setValue(object, propertyName, null); // Reset to null
-	}
-
-	/**
-	 * Get a value using reflection
-	 * 
-	 * @param object
-	 *            in this object
-	 * @param property
-	 *            the property to get
-	 * @return its value
-	 */
-	protected Object getValue(Object object, String property)
-	{
-		Object value = null;
-		try
-		{
-			value = PropertyUtils.getProperty(object, property);
-		}
-		catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e)
-		{
-			LOG.error(String.format("Cannot get value for property %s in object %s", property, object), e);
-		}
-
-		return value;
-	}
-
-	/**
-	 * Set a value using reflection
-	 * 
-	 * @param object
-	 *            target object
-	 * @param property
-	 *            target property to set
-	 * @param value
-	 *            the value to set
-	 */
-	protected void setValue(Object object, String property, Object value)
-	{
-		try
-		{
-			PropertyUtils.setProperty(object, property, value);
-		}
-		catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e)
-		{
-			LOG.error(String.format("Cannot set value %s for property %s in object %s", value, property, object), e);
-		}
+		ReflectionHelper.setValue(object, propertyName, null); // Reset to null
 	}
 
 	/**
