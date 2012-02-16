@@ -20,6 +20,7 @@ import nl.dries.wicket.hibernate.dozer.model.AbstractTreeObject;
 import nl.dries.wicket.hibernate.dozer.model.Adres;
 import nl.dries.wicket.hibernate.dozer.model.Company;
 import nl.dries.wicket.hibernate.dozer.model.DescTreeObject;
+import nl.dries.wicket.hibernate.dozer.model.MapObject;
 import nl.dries.wicket.hibernate.dozer.model.Person;
 import nl.dries.wicket.hibernate.dozer.model.RootTreeObject;
 
@@ -361,13 +362,42 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 	}
 
 	/**
+	 * Map mapping test
+	 */
+	@Test
+	public void testMap()
+	{
+		MapObject map = new MapObject();
+		map.setId(1L);
+
+		map.getMap().put("1", "one");
+		map.getMap().put("2", "two");
+
+		getSession().saveOrUpdate(map);
+
+		getSession().flush();
+		getSession().clear();
+
+		closeSession();
+		openSession();
+
+		DozerModel<MapObject> model = new DozerModel<>((MapObject) getSession().load(MapObject.class, 1L));
+
+		model.detach();
+		model = serialize(model);
+
+		assertEquals(2, model.getObject().getMap().size());
+		assertEquals("two", model.getObject().getMap().get("2"));
+	}
+
+	/**
 	 * @see nl.dries.wicket.hibernate.dozer.AbstractWicketHibernateTest#getEntities()
 	 */
 	@Override
 	protected List<Class<? extends Serializable>> getEntities()
 	{
 		return Arrays.asList(Adres.class, Person.class, AbstractTreeObject.class, DescTreeObject.class,
-			RootTreeObject.class, AbstractOrganization.class, Company.class);
+			RootTreeObject.class, AbstractOrganization.class, Company.class, MapObject.class);
 	}
 
 	/**

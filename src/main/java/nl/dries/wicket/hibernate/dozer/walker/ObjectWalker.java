@@ -5,6 +5,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import nl.dries.wicket.hibernate.dozer.SessionFinder;
@@ -168,16 +170,43 @@ public class ObjectWalker<T>
 	 * @param value
 	 *            the collection value
 	 */
-	public void handleInitializedCollection(Object object, Set<Object> toWalk, Collection<?> value)
+	public void handleInitializedCollection(Object object, Set<Object> toWalk, Object value)
 	{
-		Iterator<?> iter = value.iterator();
-		while (iter.hasNext())
+		if (value instanceof Collection<?>)
 		{
-			Object next = deproxy(iter.next());
-			if (!seen.contains(next))
+			Collection<?> collection = (Collection<?>) value;
+			Iterator<?> iter = collection.iterator();
+			while (iter.hasNext())
 			{
-				toWalk.add(next);
+				addObject(toWalk, iter.next());
 			}
+		}
+		else if (value instanceof Map<?, ?>)
+		{
+			for (Object obj : ((Map<?, ?>) value).entrySet())
+			{
+				Entry<?, ?> entry = (Entry<?, ?>) obj;
+
+				addObject(toWalk, entry.getKey());
+				addObject(toWalk, entry.getValue());
+			}
+		}
+	}
+
+	/**
+	 * Add an object to the vistiable objects (only we haven't already seen the object)
+	 * 
+	 * @param toWalk
+	 *            the {@link Set} with objects to visit
+	 * @param object
+	 *            the object to add to the set
+	 */
+	public void addObject(Set<Object> toWalk, Object object)
+	{
+		object = deproxy(object);
+		if (!seen.contains(object))
+		{
+			toWalk.add(object);
 		}
 	}
 
@@ -192,10 +221,10 @@ public class ObjectWalker<T>
 	 *            input collection
 	 * @return plain collection type
 	 */
-	private Collection<?> convertToPlainCollection(Object object, String propertyName, Object value)
+	private Object convertToPlainCollection(Object object, String propertyName, Object value)
 	{
 		PersistentCollection collection = (PersistentCollection) value;
-		Collection<?> plainCollection = HibernateCollectionType.determineType(collection).createPlainCollection(
+		Object plainCollection = HibernateCollectionType.determineType(collection).createPlainCollection(
 			collection);
 		setValue(object, propertyName, plainCollection);
 		return plainCollection;

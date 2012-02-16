@@ -4,11 +4,14 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.TreeSet;
 
 import org.hibernate.collection.PersistentBag;
 import org.hibernate.collection.PersistentCollection;
+import org.hibernate.collection.PersistentMap;
 import org.hibernate.collection.PersistentSet;
 import org.hibernate.collection.PersistentSortedSet;
 import org.hibernate.engine.SessionImplementor;
@@ -27,7 +30,9 @@ public enum HibernateCollectionType
 	/** */
 	SET(PersistentSet.class, HashSet.class),
 	/** */
-	SORTED_SET(PersistentSortedSet.class, TreeSet.class);
+	SORTED_SET(PersistentSortedSet.class, TreeSet.class),
+	/** */
+	MAP(PersistentMap.class, HashMap.class);
 
 	/** Logger */
 	private static final Logger LOG = LoggerFactory.getLogger(HibernateCollectionType.class);
@@ -36,8 +41,7 @@ public enum HibernateCollectionType
 	private Class<? extends PersistentCollection> hibernateCollectionClass;
 
 	/** Plain 'Java collections' type */
-	@SuppressWarnings("rawtypes")
-	private Class<? extends Collection> plainTypeClass;
+	private Class<?> plainTypeClass;
 
 	/**
 	 * Construct
@@ -46,7 +50,7 @@ public enum HibernateCollectionType
 	 * @param plainTypeClass
 	 */
 	private HibernateCollectionType(Class<? extends PersistentCollection> hibernateCollectionClass,
-		@SuppressWarnings("rawtypes") Class<? extends Collection> plainTypeClass)
+		Class<?> plainTypeClass)
 	{
 		this.hibernateCollectionClass = hibernateCollectionClass;
 		this.plainTypeClass = plainTypeClass;
@@ -89,13 +93,20 @@ public enum HibernateCollectionType
 	 *            the {@link PersistentCollection}
 	 * @return plain collection
 	 */
-	public Collection<?> createPlainCollection(PersistentCollection persistentCollection)
+	public Object createPlainCollection(PersistentCollection persistentCollection)
 	{
-		Collection<?> collection = null;
+		Object collection = null;
 		try
 		{
-			@SuppressWarnings("rawtypes")
-			Constructor<? extends Collection> constructor = plainTypeClass.getConstructor(Collection.class);
+			final Constructor<?> constructor;
+			if (plainTypeClass.isAssignableFrom(Map.class))
+			{
+				constructor = plainTypeClass.getConstructor(Map.class);
+			}
+			else
+			{
+				constructor = plainTypeClass.getConstructor(Collection.class);
+			}
 			collection = constructor.newInstance(persistentCollection);
 		}
 		catch (NoSuchMethodException | SecurityException e)
@@ -130,9 +141,13 @@ public enum HibernateCollectionType
 		{
 			type = HibernateCollectionType.SET;
 		}
-		else
+		else if (sourceFieldValue instanceof PersistentBag)
 		{
 			type = HibernateCollectionType.LIST;
+		}
+		else
+		{
+			type = HibernateCollectionType.MAP;
 		}
 
 		return type;
