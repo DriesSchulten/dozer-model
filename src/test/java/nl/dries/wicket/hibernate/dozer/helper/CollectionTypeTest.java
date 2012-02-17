@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import org.hibernate.collection.PersistentBag;
+import org.hibernate.collection.PersistentMap;
 import org.hibernate.collection.PersistentSet;
 import org.hibernate.collection.PersistentSortedSet;
 import org.junit.Test;
@@ -24,6 +25,7 @@ public class CollectionTypeTest
 		assertNotNull(HibernateCollectionType.LIST.createCollection(null));
 		assertNotNull(HibernateCollectionType.SET.createCollection(null));
 		assertNotNull(HibernateCollectionType.SORTED_SET.createCollection(null));
+		assertNotNull(HibernateCollectionType.MAP.createCollection(null));
 	}
 
 	/**
@@ -36,5 +38,6 @@ public class CollectionTypeTest
 		assertEquals(HibernateCollectionType.SET, HibernateCollectionType.determineType(new PersistentSet()));
 		assertEquals(HibernateCollectionType.SORTED_SET,
 			HibernateCollectionType.determineType(new PersistentSortedSet()));
+		assertEquals(HibernateCollectionType.MAP, HibernateCollectionType.determineType(new PersistentMap()));
 	}
 }
