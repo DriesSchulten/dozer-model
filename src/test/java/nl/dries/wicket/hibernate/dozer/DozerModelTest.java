@@ -390,7 +390,29 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 		assertEquals(2, model.getObject().getMap().size());
 		assertEquals("two", model.getObject().getMap().get("2"));
 	}
-	
+
+	/**
+	 * Test initialized map
+	 */
+	@Test
+	public void testInitializedMap()
+	{
+		MapObject map = new MapObject();
+		map.setId(1L);
+
+		map.getMap().put("1", "one");
+		map.getMap().put("2", "two");
+
+		getSession().saveOrUpdate(map);
+
+		DozerModel<MapObject> model = new DozerModel<MapObject>(map);
+		model.detach();
+		model = serialize(model);
+
+		assertEquals(2, model.getObject().getMap().size());
+		assertEquals("two", model.getObject().getMap().get("2"));
+	}
+
 	/**
 	 * Intialize a collection multiple times, check nu x-times loading
 	 */

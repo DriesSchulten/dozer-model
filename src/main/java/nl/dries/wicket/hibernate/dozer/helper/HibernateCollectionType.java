@@ -99,7 +99,7 @@ public enum HibernateCollectionType
 		try
 		{
 			final Constructor<?> constructor;
-			if (plainTypeClass.isAssignableFrom(Map.class))
+			if (Map.class.isAssignableFrom(plainTypeClass))
 			{
 				constructor = plainTypeClass.getConstructor(Map.class);
 			}
