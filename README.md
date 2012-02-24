@@ -12,7 +12,7 @@ In the `onDetach` of the model the object tree is traversed, when a Hibernate pr
 
 * Java 7
 * Wicket 1.5.x
-* Hibernate 3.6.x (only 3.6.x supported since it uses internal Hibernate API's for re-attaching)
+* Hibernate 4.1.x (only 4.1.x supported since it uses internal Hibernate API's for re-attaching, for 3.6.x see other branch)
 * Spring (a Spring bean implementing the `SessionFinder` interface to get access to the Hibernate session, injected using `wicket-spring`)
 
 ### Creation:

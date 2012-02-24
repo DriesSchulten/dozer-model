@@ -20,6 +20,7 @@ public final class HibernateHelper
 	 *            the entity classes
 	 * @return initialized {@link SessionFactory}
 	 */
+	@SuppressWarnings("deprecation")
 	public static SessionFactory buildSessionFactory(List<Class<? extends Serializable>> entities)
 	{
 		Configuration cfg = new Configuration();
