@@ -21,6 +21,7 @@ import nl.dries.wicket.hibernate.dozer.model.Adres;
 import nl.dries.wicket.hibernate.dozer.model.Company;
 import nl.dries.wicket.hibernate.dozer.model.DescTreeObject;
 import nl.dries.wicket.hibernate.dozer.model.MapObject;
+import nl.dries.wicket.hibernate.dozer.model.NonHibernateObject;
 import nl.dries.wicket.hibernate.dozer.model.Person;
 import nl.dries.wicket.hibernate.dozer.model.RootTreeObject;
 
@@ -447,6 +448,38 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 		model.getObject().getAdresses().size();
 		getSession().flush();
 		assertTrue(((PersistentCollection) model.getObject().getAdresses()).wasInitialized());
+	}
+
+	/**
+	 * A non Hibernate object as model-object, but its properties are Hibernate objects, so the should be handled
+	 * correctly.
+	 */
+	@Test
+	public void testNonHibernateObjectAsRoot()
+	{
+		Person person = new Person();
+		person.setId(1L);
+		person.setName("test");
+
+		Adres adres = new Adres();
+		adres.setId(1L);
+		adres.setStreet("street");
+		adres.setPerson(person);
+		person.getAdresses().add(adres);
+
+		getSession().saveOrUpdate(person);
+		getSession().flush();
+		getSession().clear();
+
+		NonHibernateObject object = new NonHibernateObject();
+		object.setPerson((Person) getSession().load(Person.class, 1L));
+
+		DozerModel<NonHibernateObject> model = new DozerModel<>(object);
+
+		model.detach();
+		model = serialize(model);
+
+		assertEquals("street", model.getObject().getPerson().getAdresses().get(0).getStreet());
 	}
 
 	/**

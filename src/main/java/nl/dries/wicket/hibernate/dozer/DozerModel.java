@@ -12,7 +12,7 @@ import nl.dries.wicket.hibernate.dozer.helper.ModelCallback;
 import nl.dries.wicket.hibernate.dozer.properties.AbstractPropertyDefinition;
 import nl.dries.wicket.hibernate.dozer.properties.CollectionPropertyDefinition;
 import nl.dries.wicket.hibernate.dozer.properties.SimplePropertyDefinition;
-import nl.dries.wicket.hibernate.dozer.walker.ObjectWalker;
+import nl.dries.wicket.hibernate.dozer.visitor.ObjectVisitor;
 
 import org.apache.wicket.injection.Injector;
 import org.apache.wicket.model.IModel;
@@ -196,7 +196,7 @@ public class DozerModel<T> implements IModel<T>, ModelCallback
 				object = (T) proxy.getHibernateLazyInitializer().getImplementation();
 			}
 
-			ObjectWalker<T> walker = new ObjectWalker<>(object, sessionFinder, this);
+			ObjectVisitor<T> walker = new ObjectVisitor<>(object, sessionFinder, this);
 			detachedObject = walker.walk();
 
 			object = null;

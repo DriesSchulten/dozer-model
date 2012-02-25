@@ -3,6 +3,8 @@ package nl.dries.wicket.hibernate.dozer.helper;
 import java.lang.reflect.InvocationTargetException;
 
 import org.apache.commons.beanutils.PropertyUtils;
+import org.hibernate.proxy.HibernateProxy;
+import org.hibernate.proxy.LazyInitializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,5 +67,26 @@ public final class ReflectionHelper
 		{
 			LOG.error(String.format("Cannot set value %s for property %s in object %s", value, property, object), e);
 		}
+	}
+
+	/**
+	 * Deproxy a Hibernate enhanced object, only call when sure the object is initialized, otherwise (unwanted)
+	 * intialization wil take place
+	 * 
+	 * @param object
+	 *            the input object
+	 * @return deproxied object
+	 */
+	@SuppressWarnings("unchecked")
+	public static <U> U deproxy(U object)
+	{
+		if (object instanceof HibernateProxy)
+		{
+			HibernateProxy hibernateProxy = (HibernateProxy) object;
+			LazyInitializer lazyInitializer = hibernateProxy.getHibernateLazyInitializer();
+
+			return (U) lazyInitializer.getImplementation();
+		}
+		return object;
 	}
 }
