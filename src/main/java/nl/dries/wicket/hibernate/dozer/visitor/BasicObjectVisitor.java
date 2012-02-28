@@ -62,7 +62,7 @@ public class BasicObjectVisitor implements VisitorStrategy
 		{
 			Class<?> type = descriptor.getPropertyType();
 
-			if (!type.isPrimitive())
+			if (type != null && !type.isPrimitive())
 			{
 				Object value = getValue(descriptor.getReadMethod(), object);
 				if (value != null && !(value instanceof Class<?>))
