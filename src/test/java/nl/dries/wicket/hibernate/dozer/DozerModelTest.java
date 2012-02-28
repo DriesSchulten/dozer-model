@@ -2,6 +2,7 @@ package nl.dries.wicket.hibernate.dozer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -480,6 +481,27 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 		model = serialize(model);
 
 		assertEquals("street", model.getObject().getPerson().getAdresses().get(0).getStreet());
+	}
+
+	/**
+	 * Set other object
+	 */
+	@Test
+	public void testSet()
+	{
+		Person person = new Person();
+		person.setId(1L);
+		person.setName("test");
+
+		getSession().saveOrUpdate(person);
+
+		DozerModel<Person> model = new DozerModel<>(person);
+		model.detach();
+
+		model.setObject(new Person());
+		model.detach();
+
+		assertNull(model.getObject().getName());
 	}
 
 	/**

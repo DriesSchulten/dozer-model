@@ -174,6 +174,11 @@ public class DozerModel<T> implements IModel<T>, ModelCallback
 	@Override
 	public void setObject(T object)
 	{
+		// Reset previous object state
+		detachedObject = null;
+		detachedCollections = null;
+		detachedProperties = null;
+
 		this.object = object;
 	}
 

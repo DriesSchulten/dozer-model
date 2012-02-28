@@ -9,7 +9,7 @@ import java.util.Set;
 
 import nl.dries.wicket.hibernate.dozer.helper.HibernateProperty;
 import nl.dries.wicket.hibernate.dozer.helper.ModelCallback;
-import nl.dries.wicket.hibernate.dozer.helper.ReflectionHelper;
+import nl.dries.wicket.hibernate.dozer.helper.ObjectHelper;
 import nl.dries.wicket.hibernate.dozer.properties.SimplePropertyDefinition;
 
 import org.apache.commons.beanutils.PropertyUtils;
@@ -76,7 +76,7 @@ public class BasicObjectVisitor implements VisitorStrategy
 					{
 						if (Hibernate.isInitialized(value))
 						{
-							value = ReflectionHelper.deproxy(value);
+							value = ObjectHelper.deproxy(value);
 							setValue(descriptor.getWriteMethod(), object, value);
 							toWalk.add(value);
 						}

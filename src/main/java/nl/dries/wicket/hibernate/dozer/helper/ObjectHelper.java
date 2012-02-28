@@ -9,17 +9,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Reflection helper functions
+ * Reflection/proxy helper functions
  * 
  * @author dries
  */
-public final class ReflectionHelper
+public final class ObjectHelper
 {
 	/** Logger */
-	private static final Logger LOG = LoggerFactory.getLogger(ReflectionHelper.class);
+	private static final Logger LOG = LoggerFactory.getLogger(ObjectHelper.class);
 
 	/** Util -> private */
-	private ReflectionHelper()
+	private ObjectHelper()
 	{
 	}
 

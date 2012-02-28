@@ -114,7 +114,7 @@ public class Attacher<T>
 		}
 
 		// Set the property to te real value, or a proxy
-		ReflectionHelper.setValue(toAttach, def.getProperty(), instance);
+		ObjectHelper.setValue(toAttach, def.getProperty(), instance);
 	}
 
 	/**
@@ -125,7 +125,7 @@ public class Attacher<T>
 	 */
 	protected void attach(CollectionPropertyDefinition def)
 	{
-		Object currentValue = ReflectionHelper.getValue(toAttach, def.getProperty());
+		Object currentValue = ObjectHelper.getValue(toAttach, def.getProperty());
 
 		if (!isInitialized(currentValue))
 		{
@@ -139,7 +139,7 @@ public class Attacher<T>
 			persistenceContext.addUninitializedCollection(persister, collection, def.getOwnerId());
 
 			// Restore value
-			ReflectionHelper.setValue(toAttach, def.getProperty(), collection);
+			ObjectHelper.setValue(toAttach, def.getProperty(), collection);
 		}
 		else
 		{

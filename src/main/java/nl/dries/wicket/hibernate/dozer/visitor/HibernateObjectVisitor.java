@@ -7,7 +7,7 @@ import java.util.Set;
 import nl.dries.wicket.hibernate.dozer.helper.HibernateCollectionType;
 import nl.dries.wicket.hibernate.dozer.helper.HibernateProperty;
 import nl.dries.wicket.hibernate.dozer.helper.ModelCallback;
-import nl.dries.wicket.hibernate.dozer.helper.ReflectionHelper;
+import nl.dries.wicket.hibernate.dozer.helper.ObjectHelper;
 import nl.dries.wicket.hibernate.dozer.properties.AbstractPropertyDefinition;
 import nl.dries.wicket.hibernate.dozer.properties.CollectionPropertyDefinition;
 import nl.dries.wicket.hibernate.dozer.properties.SimplePropertyDefinition;
@@ -61,7 +61,7 @@ public class HibernateObjectVisitor implements VisitorStrategy
 			Type type = metadata.getPropertyType(propertyName);
 			if (type instanceof AssociationType)
 			{
-				Object value = ReflectionHelper.getValue(object, propertyName);
+				Object value = ObjectHelper.getValue(object, propertyName);
 
 				if (value != null)
 				{
@@ -72,13 +72,13 @@ public class HibernateObjectVisitor implements VisitorStrategy
 					else if (value instanceof PersistentCollection)
 					{
 						Object plain = convertToPlainCollection(object, propertyName, value);
-						ReflectionHelper.setValue(object, propertyName, plain);
+						ObjectHelper.setValue(object, propertyName, plain);
 						toWalk.add(plain);
 					}
 					else
 					{
-						value = ReflectionHelper.deproxy(value);
-						ReflectionHelper.setValue(object, propertyName, value);
+						value = ObjectHelper.deproxy(value);
+						ObjectHelper.setValue(object, propertyName, value);
 						toWalk.add(value);
 					}
 				}
@@ -104,7 +104,7 @@ public class HibernateObjectVisitor implements VisitorStrategy
 		PersistentCollection collection = (PersistentCollection) value;
 		Object plainCollection = HibernateCollectionType.determineType(collection).createPlainCollection(
 			collection);
-		ReflectionHelper.setValue(object, propertyName, plainCollection);
+		ObjectHelper.setValue(object, propertyName, plainCollection);
 		return plainCollection;
 	}
 
@@ -143,6 +143,6 @@ public class HibernateObjectVisitor implements VisitorStrategy
 		}
 
 		callback.addDetachedProperty(object, def);
-		ReflectionHelper.setValue(object, propertyName, null); // Reset to null
+		ObjectHelper.setValue(object, propertyName, null); // Reset to null
 	}
 }
