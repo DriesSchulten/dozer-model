@@ -71,11 +71,15 @@ public class HibernateObjectVisitor implements VisitorStrategy
 					}
 					else if (value instanceof PersistentCollection)
 					{
-						toWalk.add(convertToPlainCollection(object, propertyName, value));
+						Object plain = convertToPlainCollection(object, propertyName, value);
+						ReflectionHelper.setValue(object, propertyName, plain);
+						toWalk.add(plain);
 					}
 					else
 					{
-						toWalk.add(ReflectionHelper.deproxy(value));
+						value = ReflectionHelper.deproxy(value);
+						ReflectionHelper.setValue(object, propertyName, value);
+						toWalk.add(value);
 					}
 				}
 			}
