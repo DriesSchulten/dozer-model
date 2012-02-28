@@ -76,7 +76,9 @@ public class BasicObjectVisitor implements VisitorStrategy
 					{
 						if (Hibernate.isInitialized(value))
 						{
-							toWalk.add(ReflectionHelper.deproxy(value));
+							value = ReflectionHelper.deproxy(value);
+							setValue(descriptor.getWriteMethod(), object, value);
+							toWalk.add(value);
 						}
 						else
 						{
@@ -86,7 +88,7 @@ public class BasicObjectVisitor implements VisitorStrategy
 							callback.addDetachedProperty(object, new SimplePropertyDefinition(
 								(Class<? extends Serializable>) object.getClass(), null,
 								descriptor.getName(), property));
-							resetValue(descriptor.getWriteMethod(), object);
+							setValue(descriptor.getWriteMethod(), object, null);
 						}
 					}
 				}
@@ -120,18 +122,20 @@ public class BasicObjectVisitor implements VisitorStrategy
 	}
 
 	/**
-	 * Resets a field
+	 * Sets a field
 	 * 
 	 * @param method
 	 *            using this setter method
 	 * @param object
 	 *            on this object
+	 * @param newVal
+	 *            the value to set
 	 */
-	private void resetValue(Method method, Object object)
+	private void setValue(Method method, Object object, Object newVal)
 	{
 		try
 		{
-			method.invoke(object, new Object[] { null });
+			method.invoke(object, new Object[] { newVal });
 		}
 		catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e)
 		{
