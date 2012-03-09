@@ -11,7 +11,9 @@ import org.hibernate.Session;
 public interface SessionFinder
 {
 	/**
+	 * @param clazz
+	 *            for this Hibernate object class
 	 * @return {@link Hibernate} session
 	 */
-	Session getHibernateSession();
+	Session getHibernateSession(Class<?> clazz);
 }

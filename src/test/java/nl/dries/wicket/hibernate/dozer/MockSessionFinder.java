@@ -26,10 +26,10 @@ public class MockSessionFinder implements SessionFinder
 	}
 
 	/**
-	 * @see nl.dries.wicket.hibernate.dozer.SessionFinder#getHibernateSession()
+	 * @see nl.dries.wicket.hibernate.dozer.SessionFinder#getHibernateSession(java.lang.Class)
 	 */
 	@Override
-	public Session getHibernateSession()
+	public Session getHibernateSession(Class<?> clazz)
 	{
 		SessionHolder holder = (SessionHolder) TransactionSynchronizationManager.getResource(sessionFactory);
 		return holder.getSession();

@@ -7,6 +7,7 @@ import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.Set;
 
+import nl.dries.wicket.hibernate.dozer.SessionFinder;
 import nl.dries.wicket.hibernate.dozer.helper.HibernateProperty;
 import nl.dries.wicket.hibernate.dozer.helper.ModelCallback;
 import nl.dries.wicket.hibernate.dozer.helper.ObjectHelper;
@@ -14,7 +15,7 @@ import nl.dries.wicket.hibernate.dozer.properties.SimplePropertyDefinition;
 
 import org.apache.commons.beanutils.PropertyUtils;
 import org.hibernate.Hibernate;
-import org.hibernate.engine.spi.SessionImplementor;
+import org.hibernate.internal.SessionImpl;
 import org.hibernate.metadata.ClassMetadata;
 import org.hibernate.proxy.HibernateProxy;
 import org.hibernate.proxy.LazyInitializer;
@@ -31,8 +32,8 @@ public class BasicObjectVisitor implements VisitorStrategy
 	/** Logger */
 	private static final Logger LOG = LoggerFactory.getLogger(BasicObjectVisitor.class);
 
-	/** Session implementor */
-	private final SessionImplementor sessionImpl;
+	/** Session finder */
+	private final SessionFinder sessionFinder;
 
 	/** Callback */
 	private final ModelCallback callback;
@@ -40,12 +41,12 @@ public class BasicObjectVisitor implements VisitorStrategy
 	/**
 	 * Construct
 	 * 
-	 * @param sessionImpl
+	 * @param sessionFinder
 	 * @param callback
 	 */
-	public BasicObjectVisitor(SessionImplementor sessionImpl, ModelCallback callback)
+	public BasicObjectVisitor(SessionFinder sessionFinder, ModelCallback callback)
 	{
-		this.sessionImpl = sessionImpl;
+		this.sessionFinder = sessionFinder;
 		this.callback = callback;
 	}
 
@@ -67,6 +68,7 @@ public class BasicObjectVisitor implements VisitorStrategy
 				Object value = getValue(descriptor.getReadMethod(), object);
 				if (value != null && !(value instanceof Class<?>))
 				{
+					SessionImpl sessionImpl = (SessionImpl) sessionFinder.getHibernateSession(type);
 					ClassMetadata metadata = sessionImpl.getFactory().getClassMetadata(type);
 					if (metadata == null)
 					{
@@ -85,9 +87,9 @@ public class BasicObjectVisitor implements VisitorStrategy
 							LazyInitializer initializer = ((HibernateProxy) value).getHibernateLazyInitializer();
 							HibernateProperty property = new HibernateProperty(initializer.getPersistentClass(),
 								initializer.getIdentifier());
-							callback.addDetachedProperty(object, new SimplePropertyDefinition(
-								(Class<? extends Serializable>) object.getClass(), null,
-								descriptor.getName(), property));
+							callback.addDetachedProperty(object,
+								new SimplePropertyDefinition((Class<? extends Serializable>) object.getClass(), null,
+									descriptor.getName(), property));
 							setValue(descriptor.getWriteMethod(), object, null);
 						}
 					}

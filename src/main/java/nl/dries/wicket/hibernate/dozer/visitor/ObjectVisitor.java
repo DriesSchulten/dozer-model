@@ -24,10 +24,7 @@ public class ObjectVisitor<T>
 	private final T root;
 
 	/** */
-	private final SessionImplementor sessionImpl;
-
-	/** */
-	private final SessionFactoryImplementor factory;
+	private final SessionFinder sessionFinder;
 
 	/*** */
 	private final ModelCallback callback;
@@ -43,8 +40,7 @@ public class ObjectVisitor<T>
 	public ObjectVisitor(T root, SessionFinder sessionFinder, ModelCallback callback)
 	{
 		this.root = root;
-		this.sessionImpl = (SessionImplementor) sessionFinder.getHibernateSession();
-		this.factory = sessionImpl.getFactory();
+		this.sessionFinder = sessionFinder;
 		this.callback = callback;
 		this.seen = new HashSet<>();
 	}
@@ -70,6 +66,9 @@ public class ObjectVisitor<T>
 	{
 		Class<?> objectClass = HibernateProxyHelper.getClassWithoutInitializingProxy(object);
 
+		SessionImplementor sessionImpl = (SessionImplementor) sessionFinder.getHibernateSession(objectClass);
+		SessionFactoryImplementor factory = sessionImpl.getFactory();
+
 		final VisitorStrategy strategy;
 		if (factory.getClassMetadata(objectClass) != null)
 		{
@@ -85,7 +84,7 @@ public class ObjectVisitor<T>
 		}
 		else
 		{
-			strategy = new BasicObjectVisitor(sessionImpl, callback);
+			strategy = new BasicObjectVisitor(sessionFinder, callback);
 		}
 
 		seen.add(object);

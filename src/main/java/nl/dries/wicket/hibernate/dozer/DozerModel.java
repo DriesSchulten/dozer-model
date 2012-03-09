@@ -18,8 +18,6 @@ import org.apache.wicket.injection.Injector;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.hibernate.proxy.HibernateProxy;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Dozer Wicket Hibernate model. This model wil act as a detachable model. When detaching all initalized objects in the
@@ -39,12 +37,6 @@ public class DozerModel<T> implements IModel<T>, ModelCallback
 {
 	/** Default */
 	private static final long serialVersionUID = 1L;
-
-	/** */
-	private static final String CGLIB_ID = "$$EnhancerByCGLIB$$";
-
-	/** Logger */
-	private static final Logger LOG = LoggerFactory.getLogger(DozerModel.class);
 
 	/** Object instance */
 	private T object;
@@ -70,16 +62,7 @@ public class DozerModel<T> implements IModel<T>, ModelCallback
 	public DozerModel(T object)
 	{
 		this();
-
 		this.object = object;
-
-		if (object != null)
-		{
-			if (object.getClass().getName().contains(CGLIB_ID))
-			{
-				LOG.warn("Given object is a Cglib proxy this can cause unexpected behavior, " + object);
-			}
-		}
 	}
 
 	/**
@@ -93,7 +76,7 @@ public class DozerModel<T> implements IModel<T>, ModelCallback
 	{
 		this();
 
-		this.object = (T) sessionFinder.getHibernateSession().load(objectClass, id);
+		this.object = (T) sessionFinder.getHibernateSession(objectClass).load(objectClass, id);
 	}
 
 	/**
@@ -160,8 +143,10 @@ public class DozerModel<T> implements IModel<T>, ModelCallback
 			// Re-attach properties
 			for (Entry<?, ?> entry : detached.entrySet())
 			{
-				list.add(new Attacher<Object>(entry.getKey(), sessionFinder.getHibernateSession(), new ArrayList<>(
-					(List<? extends AbstractPropertyDefinition>) entry.getValue()), this));
+				List<? extends AbstractPropertyDefinition> definitions = new ArrayList<>(
+					(List<? extends AbstractPropertyDefinition>) entry.getValue());
+				list.add(new Attacher<Object>(entry.getKey(), sessionFinder.getHibernateSession(entry.getKey()
+					.getClass()), definitions, this));
 			}
 		}
 
