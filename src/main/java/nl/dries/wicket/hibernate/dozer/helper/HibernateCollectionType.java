@@ -3,7 +3,6 @@ package nl.dries.wicket.hibernate.dozer.helper;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -98,23 +97,20 @@ public enum HibernateCollectionType
 		Object collection = null;
 		try
 		{
-			final Constructor<?> constructor;
 			if (Map.class.isAssignableFrom(plainTypeClass))
 			{
-				constructor = plainTypeClass.getConstructor(Map.class);
+				collection = plainTypeClass.newInstance();
 			}
 			else
 			{
-				constructor = plainTypeClass.getConstructor(Collection.class);
+				collection = plainTypeClass.newInstance();
 			}
-			collection = constructor.newInstance(persistentCollection);
 		}
-		catch (NoSuchMethodException | SecurityException e)
+		catch (SecurityException e)
 		{
-			LOG.error("Colection type {} has no Collection constructor", plainTypeClass);
+			LOG.error("Colection type {} has no empty constructor", plainTypeClass);
 		}
-		catch (InstantiationException | IllegalAccessException | IllegalArgumentException
-			| InvocationTargetException e)
+		catch (InstantiationException | IllegalAccessException | IllegalArgumentException e)
 		{
 			LOG.error("Cannot create collection instance of type " + plainTypeClass, e);
 		}

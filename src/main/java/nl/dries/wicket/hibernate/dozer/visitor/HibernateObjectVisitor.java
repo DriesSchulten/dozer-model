@@ -2,6 +2,10 @@ package nl.dries.wicket.hibernate.dozer.visitor;
 
 import java.io.Serializable;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import nl.dries.wicket.hibernate.dozer.helper.HibernateCollectionType;
@@ -13,6 +17,9 @@ import nl.dries.wicket.hibernate.dozer.properties.CollectionPropertyDefinition;
 import nl.dries.wicket.hibernate.dozer.properties.SimplePropertyDefinition;
 
 import org.hibernate.Hibernate;
+import org.hibernate.collection.internal.PersistentBag;
+import org.hibernate.collection.internal.PersistentMap;
+import org.hibernate.collection.internal.PersistentSet;
 import org.hibernate.collection.spi.PersistentCollection;
 import org.hibernate.engine.spi.SessionImplementor;
 import org.hibernate.metadata.ClassMetadata;
@@ -119,11 +126,40 @@ public class HibernateObjectVisitor implements VisitorStrategy
 	 *            input collection
 	 * @return plain collection type
 	 */
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private Object convertToPlainCollection(Object object, String propertyName, Object value)
 	{
 		PersistentCollection collection = (PersistentCollection) value;
 		Object plainCollection = HibernateCollectionType.determineType(collection).createPlainCollection(
 			collection);
+
+		// Deproxy all the elements in the collection
+		if (plainCollection instanceof List<?>)
+		{
+			List list = (List) plainCollection;
+			for (Iterator<?> iter = ((PersistentBag) collection).iterator(); iter.hasNext();)
+			{
+				list.add(ObjectHelper.deproxy(iter.next()));
+			}
+		}
+		else if (plainCollection instanceof Set<?>)
+		{
+			Set set = (Set) plainCollection;
+			for (Iterator<?> iter = ((PersistentSet) collection).iterator(); iter.hasNext();)
+			{
+				set.add(ObjectHelper.deproxy(iter.next()));
+			}
+		}
+		else
+		{
+			Map map = (Map) plainCollection;
+			for (Iterator<Entry<?, ?>> iter = ((PersistentMap) collection).entrySet().iterator(); iter.hasNext();)
+			{
+				Entry<?, ?> entry = iter.next();
+				map.put(ObjectHelper.deproxy(entry.getKey()), ObjectHelper.deproxy(entry.getValue()));
+			}
+		}
+
 		ObjectHelper.setValue(object, propertyName, plainCollection);
 		return plainCollection;
 	}
