@@ -32,6 +32,9 @@ public class BasicObjectVisitor implements VisitorStrategy
 	/** Logger */
 	private static final Logger LOG = LoggerFactory.getLogger(BasicObjectVisitor.class);
 
+	/** */
+	private static final String JAVA_PKG = "java";
+
 	/** Session finder */
 	private final SessionFinder sessionFinder;
 
@@ -63,10 +66,10 @@ public class BasicObjectVisitor implements VisitorStrategy
 		{
 			Class<?> type = descriptor.getPropertyType();
 
-			if (type != null && !type.isPrimitive())
+			if (isValidType(type))
 			{
 				Object value = getValue(descriptor.getReadMethod(), object);
-				if (value != null && !(value instanceof Class<?>))
+				if (value != null)
 				{
 					SessionImpl sessionImpl = (SessionImpl) sessionFinder.getHibernateSession(type);
 					ClassMetadata metadata = sessionImpl.getFactory().getClassMetadata(type);
@@ -98,6 +101,25 @@ public class BasicObjectVisitor implements VisitorStrategy
 		}
 
 		return toWalk;
+	}
+
+	/**
+	 * Checks if the given type is valid to visit
+	 * 
+	 * @param type
+	 *            the type to check
+	 * @return <code>true</code> if the type is valid
+	 */
+	private boolean isValidType(Class<?> type)
+	{
+		boolean valid = type != null && type.getPackage() != null && !type.isPrimitive();
+
+		if (valid)
+		{
+			valid = !type.getPackage().getName().startsWith(JAVA_PKG);
+		}
+
+		return valid;
 	}
 
 	/**
@@ -141,7 +163,7 @@ public class BasicObjectVisitor implements VisitorStrategy
 		}
 		catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e)
 		{
-			LOG.error(String.format("Error while invoking reset method %s on bean %s", method, object), e);
+			LOG.error(String.format("Error while invoking setter method %s on bean %s", method, object), e);
 		}
 	}
 }
