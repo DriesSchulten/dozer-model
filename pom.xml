@@ -208,9 +208,9 @@
 	</dependencies>
 
 	<properties>
-		<wicket.version>1.5.3</wicket.version>
-		<hibernate.version>4.1.0.Final</hibernate.version>
-		<spring.version>3.1.0.RELEASE</spring.version>
+		<wicket.version>1.5.5</wicket.version>
+		<hibernate.version>4.1.1.Final</hibernate.version>
+		<spring.version>3.1.1.RELEASE</spring.version>
 
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
