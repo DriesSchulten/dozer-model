@@ -21,9 +21,19 @@ import org.hibernate.proxy.HibernateProxyHelper;
 import org.hibernate.proxy.LazyInitializer;
 import org.hibernate.type.AssociationType;
 import org.hibernate.type.Type;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+/**
+ * Visitor strategy for Hibernate objects
+ * 
+ * @author schulten
+ */
 public class HibernateObjectVisitor implements VisitorStrategy
 {
+	/** Logger */
+	private static final Logger LOG = LoggerFactory.getLogger(HibernateObjectVisitor.class);
+
 	/** */
 	private final SessionImplementor sessionImpl;
 
@@ -65,20 +75,30 @@ public class HibernateObjectVisitor implements VisitorStrategy
 
 				if (value != null)
 				{
+					Object[] logVals = new Object[] { identifier, metadata.getMappedClass().getName(), propertyName };
+
 					if (!Hibernate.isInitialized(value))
 					{
 						handleProxy(object, identifier, propertyName, value);
+
+						LOG.debug("Detaching proxy [#{} {}.{}]", logVals);
 					}
 					else if (value instanceof PersistentCollection)
 					{
 						Object plain = convertToPlainCollection(object, propertyName, value);
 						ObjectHelper.setValue(object, propertyName, plain);
+
+						LOG.debug("Replacing initialized collection [#{} {}.{}]", logVals);
+
 						toWalk.add(plain);
 					}
 					else
 					{
 						value = ObjectHelper.deproxy(value);
 						ObjectHelper.setValue(object, propertyName, value);
+
+						LOG.debug("Deproxying intialized value [#{} {}.{}]", logVals);
+
 						toWalk.add(value);
 					}
 				}

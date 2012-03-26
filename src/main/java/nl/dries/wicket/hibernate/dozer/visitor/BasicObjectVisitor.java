@@ -83,6 +83,10 @@ public class BasicObjectVisitor implements VisitorStrategy
 						{
 							value = ObjectHelper.deproxy(value);
 							setValue(descriptor.getWriteMethod(), object, value);
+
+							LOG.debug("Deproxying intialized value [{}.{}]", object.getClass().getName(),
+								descriptor.getName());
+
 							toWalk.add(value);
 						}
 						else
@@ -93,6 +97,9 @@ public class BasicObjectVisitor implements VisitorStrategy
 							callback.addDetachedProperty(object,
 								new SimplePropertyDefinition((Class<? extends Serializable>) object.getClass(), null,
 									descriptor.getName(), property));
+
+							LOG.debug("Detaching proxy [{}.{}]", object.getClass().getName(), descriptor.getName());
+
 							setValue(descriptor.getWriteMethod(), object, null);
 						}
 					}
