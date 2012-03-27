@@ -6,12 +6,13 @@ import nl.dries.wicket.hibernate.dozer.properties.AbstractPropertyDefinition;
 import nl.dries.wicket.hibernate.dozer.properties.CollectionPropertyDefinition;
 import nl.dries.wicket.hibernate.dozer.properties.SimplePropertyDefinition;
 
+import org.hibernate.EntityMode;
 import org.hibernate.Session;
-import org.hibernate.collection.spi.PersistentCollection;
-import org.hibernate.engine.spi.EntityKey;
-import org.hibernate.engine.spi.PersistenceContext;
-import org.hibernate.engine.spi.SessionFactoryImplementor;
-import org.hibernate.engine.spi.SessionImplementor;
+import org.hibernate.collection.PersistentCollection;
+import org.hibernate.engine.EntityKey;
+import org.hibernate.engine.PersistenceContext;
+import org.hibernate.engine.SessionFactoryImplementor;
+import org.hibernate.engine.SessionImplementor;
 import org.hibernate.persister.collection.CollectionPersister;
 import org.hibernate.persister.entity.EntityPersister;
 
@@ -91,7 +92,7 @@ public class Attacher<T>
 		EntityPersister persister = getPersister(def.getHibernateProperty());
 		PersistenceContext persistenceContext = sessionImpl.getPersistenceContext();
 
-		EntityKey key = new EntityKey(def.getHibernateProperty().getId(), persister, sessionImpl.getTenantIdentifier());
+		EntityKey key = new EntityKey(def.getHibernateProperty().getId(), persister, EntityMode.POJO);
 
 		// Check existing instance
 		Object instance = persistenceContext.getEntity(key);

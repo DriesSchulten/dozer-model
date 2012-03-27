@@ -16,12 +16,13 @@ import nl.dries.wicket.hibernate.dozer.properties.AbstractPropertyDefinition;
 import nl.dries.wicket.hibernate.dozer.properties.CollectionPropertyDefinition;
 import nl.dries.wicket.hibernate.dozer.properties.SimplePropertyDefinition;
 
+import org.hibernate.EntityMode;
 import org.hibernate.Hibernate;
-import org.hibernate.collection.internal.PersistentBag;
-import org.hibernate.collection.internal.PersistentMap;
-import org.hibernate.collection.internal.PersistentSet;
-import org.hibernate.collection.spi.PersistentCollection;
-import org.hibernate.engine.spi.SessionImplementor;
+import org.hibernate.collection.PersistentBag;
+import org.hibernate.collection.PersistentCollection;
+import org.hibernate.collection.PersistentMap;
+import org.hibernate.collection.PersistentSet;
+import org.hibernate.engine.SessionImplementor;
 import org.hibernate.metadata.ClassMetadata;
 import org.hibernate.proxy.HibernateProxy;
 import org.hibernate.proxy.HibernateProxyHelper;
@@ -82,7 +83,8 @@ public class HibernateObjectVisitor implements VisitorStrategy
 
 				if (value != null)
 				{
-					Object[] logVals = new Object[] { identifier, metadata.getMappedClass().getName(), propertyName };
+					Object[] logVals = new Object[] { identifier, metadata.getMappedClass(EntityMode.POJO).getName(),
+						propertyName };
 
 					if (!Hibernate.isInitialized(value))
 					{

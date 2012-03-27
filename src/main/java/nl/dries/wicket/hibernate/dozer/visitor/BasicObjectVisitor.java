@@ -15,7 +15,7 @@ import nl.dries.wicket.hibernate.dozer.properties.SimplePropertyDefinition;
 
 import org.apache.commons.beanutils.PropertyUtils;
 import org.hibernate.Hibernate;
-import org.hibernate.internal.SessionImpl;
+import org.hibernate.impl.SessionImpl;
 import org.hibernate.metadata.ClassMetadata;
 import org.hibernate.proxy.HibernateProxy;
 import org.hibernate.proxy.LazyInitializer;

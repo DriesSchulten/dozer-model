@@ -8,12 +8,12 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.TreeSet;
 
-import org.hibernate.collection.internal.PersistentBag;
-import org.hibernate.collection.internal.PersistentMap;
-import org.hibernate.collection.internal.PersistentSet;
-import org.hibernate.collection.internal.PersistentSortedSet;
-import org.hibernate.collection.spi.PersistentCollection;
-import org.hibernate.engine.spi.SessionImplementor;
+import org.hibernate.collection.PersistentBag;
+import org.hibernate.collection.PersistentCollection;
+import org.hibernate.collection.PersistentMap;
+import org.hibernate.collection.PersistentSet;
+import org.hibernate.collection.PersistentSortedSet;
+import org.hibernate.engine.SessionImplementor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
