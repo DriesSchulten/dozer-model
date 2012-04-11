@@ -1,7 +1,11 @@
 package nl.dries.wicket.hibernate.dozer.model;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import javax.persistence.Entity;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
 
 import org.hibernate.Hibernate;
 
@@ -17,6 +21,10 @@ public class Company extends AbstractOrganization
 	/** */
 	@ManyToOne
 	private Adres adres;
+
+	/** */
+	@OneToMany
+	private Set<Person> persons = new HashSet<>();
 
 	/**
 	 * @return the adres
@@ -36,6 +44,23 @@ public class Company extends AbstractOrganization
 	}
 
 	/**
+	 * @return the persons
+	 */
+	public Set<Person> getPersons()
+	{
+		return persons;
+	}
+
+	/**
+	 * @param persons
+	 *            the persons to set
+	 */
+	public void setPersons(Set<Person> persons)
+	{
+		this.persons = persons;
+	}
+
+	/**
 	 * @see java.lang.Object#hashCode()
 	 */
 	@Override
@@ -44,6 +69,7 @@ public class Company extends AbstractOrganization
 		final int prime = 31;
 		int result = super.hashCode();
 		result = prime * result + ((adres == null) ? 0 : adres.hashCode());
+		result = prime * result + ((getPersons() == null) ? 0 : getPersons().hashCode());
 		return result;
 	}
 
@@ -74,6 +100,17 @@ public class Company extends AbstractOrganization
 			}
 		}
 		else if (!adres.equals(other.adres))
+		{
+			return false;
+		}
+		if (getPersons() == null)
+		{
+			if (other.getPersons() != null)
+			{
+				return false;
+			}
+		}
+		else if (!getPersons().equals(other.getPersons()))
 		{
 			return false;
 		}

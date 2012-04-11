@@ -50,17 +50,23 @@ public class HibernateObjectVisitor implements VisitorStrategy
 	/** */
 	private final ClassMetadata metadata;
 
+	/** */
+	private final Object previous;
+
 	/**
 	 * Construct
 	 * 
 	 * @param sessionImpl
 	 * @param metadata
+	 * @param previous
 	 */
-	public HibernateObjectVisitor(SessionImplementor sessionImpl, ModelCallback callback, ClassMetadata metadata)
+	public HibernateObjectVisitor(SessionImplementor sessionImpl, ModelCallback callback, ClassMetadata metadata,
+		Object previous)
 	{
 		this.sessionImpl = sessionImpl;
 		this.callback = callback;
 		this.metadata = metadata;
+		this.previous = previous;
 	}
 
 	/**
@@ -80,7 +86,7 @@ public class HibernateObjectVisitor implements VisitorStrategy
 			{
 				Object value = ObjectHelper.getValue(object, propertyName);
 
-				if (value != null)
+				if (value != null && !value.equals(previous))
 				{
 					Object[] logVals = new Object[] { identifier, metadata.getMappedClass().getName(), propertyName };
 
