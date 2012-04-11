@@ -2,6 +2,7 @@ package nl.dries.wicket.hibernate.dozer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -28,6 +29,7 @@ import nl.dries.wicket.hibernate.dozer.model.RootTreeObject;
 
 import org.apache.wicket.model.Model;
 import org.hibernate.collection.PersistentCollection;
+import org.hibernate.proxy.HibernateProxy;
 import org.junit.Test;
 
 /**
@@ -140,7 +142,7 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 		model.detach();
 		model = serialize(model);
 
-		assertEquals(1, model.getObject().getChildren().size());
+		assertEquals(2, model.getObject().getChildren().size());
 		assertEquals(1, model.getObject().getChildren().get(0).getChildren().size());
 	}
 
@@ -172,6 +174,30 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 		DozerModel<AbstractTreeObject> model = new DozerModel<>(buildTree());
 		model.detach();
 		model = serialize(model);
+	}
+
+	/**
+	 * Test a tree on which 2 branches resolve to the same node
+	 */
+	@Test
+	public void testTreeWithSameBranches()
+	{
+		DozerModel<AbstractTreeObject> model = new DozerModel<>(buildTree());
+		model.detach();
+		model = serialize(model);
+
+		getSession().flush();
+		getSession().clear();
+		closeSession();
+		openSession();
+
+		AbstractTreeObject newChild = new DescTreeObject();
+		newChild.setName("Temp");
+		newChild.getChildren().add((AbstractTreeObject) getSession().load(DescTreeObject.class, 3L));
+		model.getObject().getChildren().get(1).getChildren().add(newChild);
+		model.detach();
+
+		assertFalse(model.getObject().getChildren().get(1).getChildren().get(0).getChildren().get(0) instanceof HibernateProxy);
 	}
 
 	/**
@@ -321,6 +347,11 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 		c1l1.getChildren().add(c1l2);
 		getSession().saveOrUpdate(c1l2);
 
+		AbstractTreeObject c2l1 = new DescTreeObject(4L, "c2l1");
+		c2l1.setParent(root);
+		root.getChildren().add(c2l1);
+		getSession().saveOrUpdate(c2l1);
+
 		getSession().flush();
 		getSession().clear();
 
@@ -416,6 +447,62 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 	}
 
 	/**
+	 * Test using set collection
+	 */
+	@Test
+	public void testSet()
+	{
+		Company company = new Company();
+		company.setId(1L);
+
+		Person person = new Person();
+		person.setId(1L);
+
+		company.getPersons().add(person);
+
+		getSession().saveOrUpdate(person);
+		getSession().saveOrUpdate(company);
+
+		getSession().flush();
+		getSession().clear();
+
+		DozerModel<Company> model = new DozerModel<>((Company) getSession().load(Company.class, 1L));
+		model.detach();
+		model = serialize(model);
+
+		assertEquals(1, model.getObject().getPersons().size());
+	}
+
+	/**
+	 * Test using initialized set collection
+	 */
+	@Test
+	public void testSetInitialized()
+	{
+		Company company = new Company();
+		company.setId(1L);
+
+		Person person = new Person();
+		person.setId(1L);
+
+		company.getPersons().add(person);
+
+		getSession().saveOrUpdate(person);
+		getSession().saveOrUpdate(company);
+
+		getSession().flush();
+		getSession().clear();
+
+		DozerModel<Company> model = new DozerModel<>((Company) getSession().load(Company.class, 1L));
+		model.getObject().getPersons().size();
+
+		model.detach();
+		model = serialize(model);
+
+		assertEquals(1, model.getObject().getPersons().size());
+	}
+
+	/**
 	 * Intialize a collection multiple times, check nu x-times loading
 	 */
 	@Test
@@ -484,10 +571,41 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 	}
 
 	/**
+	 * A non Hibernate object as root, but the containing Hibernate objects are initialized
+	 */
+	@Test
+	public void testNonHibernateObjectAsRootInitialized()
+	{
+		Person person = new Person();
+		person.setId(1L);
+		person.setName("test");
+
+		Adres adres = new Adres();
+		adres.setId(1L);
+		adres.setStreet("street");
+		adres.setPerson(person);
+		person.getAdresses().add(adres);
+
+		getSession().saveOrUpdate(person);
+
+		NonHibernateObject object = new NonHibernateObject();
+		object.setPerson(person);
+		object.setOther(new NonHibernateObject());
+
+		DozerModel<NonHibernateObject> model = new DozerModel<>(object);
+
+		model.detach();
+		model = serialize(model);
+
+		assertEquals("test", model.getObject().getPerson().getName());
+		assertNotNull(model.getObject().getOther());
+	}
+
+	/**
 	 * Set other object
 	 */
 	@Test
-	public void testSet()
+	public void testSetOtherObject()
 	{
 		Person person = new Person();
 		person.setId(1L);
