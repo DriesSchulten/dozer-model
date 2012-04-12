@@ -50,23 +50,18 @@ public class HibernateObjectVisitor implements VisitorStrategy
 	/** */
 	private final ClassMetadata metadata;
 
-	/** */
-	private final Object previous;
-
 	/**
 	 * Construct
 	 * 
 	 * @param sessionImpl
+	 * @param callback
 	 * @param metadata
-	 * @param previous
 	 */
-	public HibernateObjectVisitor(SessionImplementor sessionImpl, ModelCallback callback, ClassMetadata metadata,
-		Object previous)
+	public HibernateObjectVisitor(SessionImplementor sessionImpl, ModelCallback callback, ClassMetadata metadata)
 	{
 		this.sessionImpl = sessionImpl;
 		this.callback = callback;
 		this.metadata = metadata;
-		this.previous = previous;
 	}
 
 	/**
@@ -86,7 +81,7 @@ public class HibernateObjectVisitor implements VisitorStrategy
 			{
 				Object value = ObjectHelper.getValue(object, propertyName);
 
-				if (value != null && !value.equals(previous))
+				if (value != null)
 				{
 					Object[] logVals = new Object[] { identifier, metadata.getMappedClass().getName(), propertyName };
 
@@ -145,7 +140,8 @@ public class HibernateObjectVisitor implements VisitorStrategy
 			List list = (List) plainCollection;
 			for (Iterator<?> iter = ((PersistentBag) collection).iterator(); iter.hasNext();)
 			{
-				list.add(ObjectHelper.deproxy(iter.next()));
+				Object next = iter.next();
+				list.add(ObjectHelper.deproxy(next));
 			}
 		}
 		else if (plainCollection instanceof Set<?>)
@@ -153,7 +149,8 @@ public class HibernateObjectVisitor implements VisitorStrategy
 			Set set = (Set) plainCollection;
 			for (Iterator<?> iter = ((PersistentSet) collection).iterator(); iter.hasNext();)
 			{
-				set.add(ObjectHelper.deproxy(iter.next()));
+				Object next = iter.next();
+				set.add(ObjectHelper.deproxy(next));
 			}
 		}
 		else
