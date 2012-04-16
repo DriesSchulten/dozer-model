@@ -29,7 +29,7 @@
 		<snapshotRepository>
 			<id>deployment.external</id>
 			<name>external snapshot Repository</name>
-			<url>http://vaatwasser:8081/nexus/content/repositories/external-snapshot//</url>
+			<url>http://vaatwasser:8081/nexus/content/repositories/external-snapshot/</url>
 			<uniqueVersion>false</uniqueVersion>
 		</snapshotRepository>
 	</distributionManagement>

@@ -32,3 +32,8 @@ In the `onDetach` of the model the object tree is traversed, when a Hibernate pr
 	2 On detach the `List` is still a proxy, and detached to `null`
 	3 On attach the model gets the current value of the `List` member, because it was set to `null` lazy initialization will return a new empty list, the model will see this 'new' `List` as a changed value and not re-attach the original `List` as a proxy, effectively clearing the values...
 * Watch out for Hibernate's auto-flush behavior (if enabled for the current session), because the model changes the original loaded Hibernate objects it can cause a flush of the model in (half) detached state, causing values to be saved as `null` to the database...
+
+## Maven repo
+
+* Snapshot: [http://repository.topicuszorg.nl/external-snapshot/](http://repository.topicuszorg.nl/external-snapshot/)
+* Release: [http://repository.topicuszorg.nl/external-releases/](http://repository.topicuszorg.nl/external-releases/)
