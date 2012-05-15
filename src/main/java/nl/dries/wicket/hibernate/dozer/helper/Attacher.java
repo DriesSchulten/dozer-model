@@ -6,14 +6,18 @@ import nl.dries.wicket.hibernate.dozer.properties.AbstractPropertyDefinition;
 import nl.dries.wicket.hibernate.dozer.properties.CollectionPropertyDefinition;
 import nl.dries.wicket.hibernate.dozer.properties.SimplePropertyDefinition;
 
+import org.hibernate.LockMode;
 import org.hibernate.Session;
 import org.hibernate.collection.spi.PersistentCollection;
+import org.hibernate.engine.internal.Versioning;
 import org.hibernate.engine.spi.EntityKey;
 import org.hibernate.engine.spi.PersistenceContext;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.engine.spi.SessionImplementor;
+import org.hibernate.engine.spi.Status;
 import org.hibernate.persister.collection.CollectionPersister;
 import org.hibernate.persister.entity.EntityPersister;
+import org.hibernate.type.TypeHelper;
 
 /**
  * Hibernate object (re-)attacher
@@ -138,6 +142,36 @@ public class Attacher<T>
 
 			persistenceContext.addUninitializedCollection(persister, collection, def.getOwnerId());
 
+			// Possibly re-attach owner
+			EntityKey key = new EntityKey(def.getOwnerId(), getOwnPersister(), sessionImpl.getTenantIdentifier());
+			if (!persistenceContext.containsEntity(key))
+			{
+				EntityPersister ownPersister = getOwnPersister();
+
+				Object[] values = ownPersister.getPropertyValues(toAttach);
+				TypeHelper.deepCopy(
+					values,
+					ownPersister.getPropertyTypes(),
+					ownPersister.getPropertyUpdateability(),
+					values,
+					sessionImpl
+					);
+				Object version = Versioning.getVersion(values, ownPersister);
+
+				persistenceContext.addEntity(
+					toAttach,
+					(ownPersister.isMutable() ? Status.MANAGED : Status.READ_ONLY),
+					values,
+					key,
+					version,
+					LockMode.NONE,
+					true,
+					ownPersister,
+					false,
+					true // will be ignored, using the existing Entry instead
+					);
+			}
+
 			// Restore value
 			ObjectHelper.setValue(toAttach, def.getProperty(), collection);
 		}
@@ -191,5 +225,14 @@ public class Attacher<T>
 	{
 		SessionFactoryImplementor factory = sessionImpl.getFactory();
 		return factory.getCollectionPersister(def.getRole());
+	}
+
+	/**
+	 * @return the {@link EntityPersister} for the object to attach
+	 */
+	protected EntityPersister getOwnPersister()
+	{
+		SessionFactoryImplementor factory = sessionImpl.getFactory();
+		return factory.getEntityPersister(toAttach.getClass().getName());
 	}
 }

@@ -623,6 +623,33 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 	}
 
 	/**
+	 * Test a collection mapped with: 'orphanRemoval'
+	 */
+	@Test
+	public void testOrphanRemovelAsociation()
+	{
+		MapObject obj = new MapObject();
+		obj.setId(1L);
+		getSession().saveOrUpdate(obj);
+
+		Adres adres = new Adres();
+		adres.setId(1L);
+		adres.setStreet("test");
+		obj.getAdresses().add(adres);
+		getSession().saveOrUpdate(adres);
+
+		getSession().flush();
+		getSession().clear();
+
+		DozerModel<MapObject> model = new DozerModel<>((MapObject) getSession().load(MapObject.class, 1L));
+		model.detach();
+
+		getSession().clear();
+
+		assertEquals("test", model.getObject().getAdresses().get(0).getStreet());
+	}
+
+	/**
 	 * @see nl.dries.wicket.hibernate.dozer.AbstractWicketHibernateTest#getEntities()
 	 */
 	@Override
