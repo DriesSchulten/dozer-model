@@ -1,7 +1,6 @@
 package nl.dries.wicket.hibernate.dozer.helper;
 
-import nl.dries.wicket.hibernate.dozer.properties.AbstractPropertyDefinition;
-import nl.dries.wicket.hibernate.dozer.properties.CollectionPropertyDefinition;
+import nl.dries.wicket.hibernate.dozer.SessionFinder;
 
 /**
  * Callback to add/register detached properties
@@ -11,22 +10,7 @@ import nl.dries.wicket.hibernate.dozer.properties.CollectionPropertyDefinition;
 public interface ModelCallback
 {
 	/**
-	 * Add a detached property
-	 * 
-	 * @param owner
-	 *            the owner (<b>NO</b> Hibernate proxy)
-	 * @param def
-	 *            the {@link AbstractPropertyDefinition} it maps to
+	 * @return current {@link SessionFinder}
 	 */
-	void addDetachedProperty(Object owner, AbstractPropertyDefinition def);
-
-	/**
-	 * Remove a propery (because it is attached)
-	 * 
-	 * @param owner
-	 *            the owner of the property
-	 * @param def
-	 *            the {@link CollectionPropertyDefinition}
-	 */
-	void removeProperty(Object owner, CollectionPropertyDefinition def);
+	SessionFinder getSessionFinder();
 }

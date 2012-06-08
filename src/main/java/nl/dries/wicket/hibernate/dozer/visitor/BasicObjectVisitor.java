@@ -1,7 +1,6 @@
 package nl.dries.wicket.hibernate.dozer.visitor;
 
 import java.beans.PropertyDescriptor;
-import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashSet;
@@ -11,7 +10,10 @@ import nl.dries.wicket.hibernate.dozer.SessionFinder;
 import nl.dries.wicket.hibernate.dozer.helper.HibernateProperty;
 import nl.dries.wicket.hibernate.dozer.helper.ModelCallback;
 import nl.dries.wicket.hibernate.dozer.helper.ObjectHelper;
+import nl.dries.wicket.hibernate.dozer.properties.AbstractPropertyDefinition;
 import nl.dries.wicket.hibernate.dozer.properties.SimplePropertyDefinition;
+import nl.dries.wicket.hibernate.dozer.proxy.ProxyBuilder;
+import nl.dries.wicket.hibernate.dozer.proxy.ProxyBuilder.Proxied;
 
 import org.apache.commons.beanutils.PropertyUtils;
 import org.hibernate.Hibernate;
@@ -77,7 +79,7 @@ public class BasicObjectVisitor implements VisitorStrategy
 					{
 						toWalk.add(value);
 					}
-					else
+					else if (!(value instanceof Proxied))
 					{
 						if (Hibernate.isInitialized(value))
 						{
@@ -94,13 +96,12 @@ public class BasicObjectVisitor implements VisitorStrategy
 							LazyInitializer initializer = ((HibernateProxy) value).getHibernateLazyInitializer();
 							HibernateProperty property = new HibernateProperty(initializer.getPersistentClass(),
 								initializer.getIdentifier());
-							callback.addDetachedProperty(object,
-								new SimplePropertyDefinition((Class<? extends Serializable>) object.getClass(), null,
-									descriptor.getName(), property));
+							AbstractPropertyDefinition prop = new SimplePropertyDefinition(
+								object.getClass(), descriptor.getName(), callback, property);
 
 							LOG.debug("Detaching proxy [{}.{}]", object.getClass().getName(), descriptor.getName());
 
-							setValue(descriptor.getWriteMethod(), object, null);
+							setValue(descriptor.getWriteMethod(), object, ProxyBuilder.buildProxy(prop));
 						}
 					}
 				}

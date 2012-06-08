@@ -1,8 +1,7 @@
 package nl.dries.wicket.hibernate.dozer.properties;
 
-import java.io.Serializable;
-
 import nl.dries.wicket.hibernate.dozer.helper.HibernateProperty;
+import nl.dries.wicket.hibernate.dozer.helper.ModelCallback;
 
 /**
  * 'Simple' property
@@ -21,18 +20,17 @@ public class SimplePropertyDefinition extends AbstractPropertyDefinition
 	 * Construct
 	 * 
 	 * @param owner
-	 *            the {@link Class} of the property owner
-	 * @param ownerId
-	 *            it's id
+	 *            the property owner
 	 * @param property
 	 *            the name of the field
+	 * @parma modelCallback the {@link ModelCallback}
 	 * @param hibernateProperty
 	 *            it's {@link HibernateProperty}
 	 */
-	public SimplePropertyDefinition(Class<? extends Serializable> owner, Serializable ownerId, String property,
+	public SimplePropertyDefinition(Object owner, String property, ModelCallback modelCallback,
 		HibernateProperty hibernateProperty)
 	{
-		super(owner, ownerId, property);
+		super(owner, property, modelCallback);
 		this.hibernateProperty = hibernateProperty;
 	}
 
@@ -42,5 +40,14 @@ public class SimplePropertyDefinition extends AbstractPropertyDefinition
 	public HibernateProperty getHibernateProperty()
 	{
 		return hibernateProperty;
+	}
+
+	/**
+	 * @see nl.dries.wicket.hibernate.dozer.properties.AbstractPropertyDefinition#getPropertyType()
+	 */
+	@Override
+	public Class<?> getPropertyType()
+	{
+		return getHibernateProperty().getEntityClass();
 	}
 }

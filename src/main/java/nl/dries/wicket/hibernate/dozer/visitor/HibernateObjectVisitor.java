@@ -15,6 +15,8 @@ import nl.dries.wicket.hibernate.dozer.helper.ObjectHelper;
 import nl.dries.wicket.hibernate.dozer.properties.AbstractPropertyDefinition;
 import nl.dries.wicket.hibernate.dozer.properties.CollectionPropertyDefinition;
 import nl.dries.wicket.hibernate.dozer.properties.SimplePropertyDefinition;
+import nl.dries.wicket.hibernate.dozer.proxy.ProxyBuilder;
+import nl.dries.wicket.hibernate.dozer.proxy.ProxyBuilder.Proxied;
 
 import org.hibernate.Hibernate;
 import org.hibernate.collection.internal.PersistentBag;
@@ -24,7 +26,6 @@ import org.hibernate.collection.spi.PersistentCollection;
 import org.hibernate.engine.spi.SessionImplementor;
 import org.hibernate.metadata.ClassMetadata;
 import org.hibernate.proxy.HibernateProxy;
-import org.hibernate.proxy.HibernateProxyHelper;
 import org.hibernate.proxy.LazyInitializer;
 import org.hibernate.type.AssociationType;
 import org.hibernate.type.Type;
@@ -77,6 +78,7 @@ public class HibernateObjectVisitor implements VisitorStrategy
 		for (String propertyName : metadata.getPropertyNames())
 		{
 			Type type = metadata.getPropertyType(propertyName);
+
 			if (type instanceof AssociationType)
 			{
 				Object value = ObjectHelper.getValue(object, propertyName);
@@ -88,6 +90,7 @@ public class HibernateObjectVisitor implements VisitorStrategy
 					if (!Hibernate.isInitialized(value))
 					{
 						handleProxy(object, identifier, propertyName, value);
+						sessionImpl.getPersistenceContext().removeCollectionHolder(value);
 
 						LOG.debug("Detaching proxy [#{} {}.{}]", logVals);
 					}
@@ -95,23 +98,32 @@ public class HibernateObjectVisitor implements VisitorStrategy
 					{
 						Object plain = convertToPlainCollection(object, propertyName, value);
 						ObjectHelper.setValue(object, propertyName, plain);
+						sessionImpl.getPersistenceContext().removeCollectionHolder(value);
 
 						LOG.debug("Replacing initialized collection [#{} {}.{}]", logVals);
 
 						toWalk.add(plain);
 					}
-					else
+					else if (!(value instanceof Proxied))
 					{
 						value = ObjectHelper.deproxy(value);
 						ObjectHelper.setValue(object, propertyName, value);
+						// sessionImpl.getPersistenceContext().removeEntry(value);
 
 						LOG.debug("Deproxying intialized value [#{} {}.{}]", logVals);
 
 						toWalk.add(value);
 					}
+					else
+					{
+						LOG.debug("Ignoring cglib proxied value [#{} {}.{}]", logVals);
+					}
 				}
 			}
 		}
+
+		// Remove object from Hibernate session context, because *we* altered it
+		sessionImpl.getPersistenceContext().removeEntry(object);
 
 		return toWalk;
 	}
@@ -184,12 +196,10 @@ public class HibernateObjectVisitor implements VisitorStrategy
 	{
 		final AbstractPropertyDefinition def;
 
-		Class<? extends Serializable> objectClass = HibernateProxyHelper.getClassWithoutInitializingProxy(object);
-
 		// Collection
 		if (value instanceof PersistentCollection)
 		{
-			def = new CollectionPropertyDefinition(objectClass, identifier, propertyName,
+			def = new CollectionPropertyDefinition(object, propertyName, callback,
 				HibernateCollectionType.determineType((PersistentCollection) value));
 		}
 		// Other
@@ -198,10 +208,9 @@ public class HibernateObjectVisitor implements VisitorStrategy
 			LazyInitializer initializer = ((HibernateProxy) value).getHibernateLazyInitializer();
 			HibernateProperty property = new HibernateProperty(initializer.getPersistentClass(),
 				initializer.getIdentifier());
-			def = new SimplePropertyDefinition(objectClass, identifier, propertyName, property);
+			def = new SimplePropertyDefinition(object, propertyName, callback, property);
 		}
 
-		callback.addDetachedProperty(object, def);
-		ObjectHelper.setValue(object, propertyName, null); // Reset to null
+		ObjectHelper.setValue(object, propertyName, ProxyBuilder.buildProxy(def));
 	}
 }
