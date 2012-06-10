@@ -70,15 +70,6 @@ public enum HibernateCollectionType
 	}
 
 	/**
-	 * @param plainInterface
-	 *            the plainInterface to set
-	 */
-	public void setPlainInterface(Class<?> plainInterface)
-	{
-		this.plainInterface = plainInterface;
-	}
-
-	/**
 	 * Creates a instance of the {@link PersistentCollection} defined by this type
 	 * 
 	 * @param sessionImpl
