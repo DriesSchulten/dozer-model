@@ -26,6 +26,11 @@ public class ProxyBuilder
 	/** Logger */
 	private static final Logger LOG = LoggerFactory.getLogger(ProxyBuilder.class);
 
+	/** Private construct */
+	private ProxyBuilder()
+	{
+	}
+
 	/**
 	 * Create a proxy based on a detachable Hibernate property
 	 * 
@@ -154,9 +159,13 @@ public class ProxyBuilder
 	 * Tag interface
 	 * 
 	 * @author dries
-	 * 
 	 */
 	public static interface Proxied
 	{
+		/**
+		 * @return object that will replace this object in serialized state
+		 * @throws ObjectStreamException
+		 */
+		Object writeReplace() throws ObjectStreamException;
 	}
 }

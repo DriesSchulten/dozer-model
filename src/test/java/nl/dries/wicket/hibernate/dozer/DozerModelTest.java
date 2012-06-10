@@ -97,7 +97,7 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 		model.detach();
 		model = serialize(model);
 
-		assertEquals(getSession().load(Adres.class, 1L), model.getObject());
+		assertEquals(person.getAdresses().get(0), model.getObject().getPerson().getAdresses().get(0));
 		assertEquals(person.getName(), model.getObject().getPerson().getName());
 	}
 
@@ -126,9 +126,6 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 		DozerModel<Person> model = new DozerModel<>(person);
 		model.detach();
 		model = serialize(model);
-
-		closeSession();
-		openSession();
 
 		assertEquals(person, model.getObject());
 		assertEquals(adres, model.getObject().getAdresses().get(0));
@@ -189,11 +186,6 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 		DozerModel<AbstractTreeObject> model = new DozerModel<>(buildTree());
 		model.detach();
 		model = serialize(model);
-
-		getSession().flush();
-		getSession().clear();
-		closeSession();
-		openSession();
 
 		AbstractTreeObject newChild = new DescTreeObject();
 		newChild.setName("Temp");
@@ -299,11 +291,6 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 		model.detach();
 		model = serialize(model);
 
-		getSession().flush();
-		getSession().clear();
-		closeSession();
-		openSession();
-
 		model.getObject().setName("edited");
 		Person loaded = (Person) getSession().load(Person.class, 1L);
 		getSession().saveOrUpdate(loaded);
@@ -321,11 +308,6 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 		person.setId(1L);
 		person.setName("person");
 		getSession().saveOrUpdate(person);
-
-		getSession().flush();
-		getSession().clear();
-		closeSession();
-		openSession();
 
 		person = (Person) getSession().load(Person.class, 1L);
 		getSession().evict(person);
@@ -644,7 +626,11 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 			ObjectOutputStream os = new ObjectOutputStream(baos);
 			os.writeObject(in);
 
+			closeSession();
+
 			byte[] bytes = baos.toByteArray();
+
+			openSession();
 
 			ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
 			ObjectInputStream is = new ObjectInputStream(bais);
