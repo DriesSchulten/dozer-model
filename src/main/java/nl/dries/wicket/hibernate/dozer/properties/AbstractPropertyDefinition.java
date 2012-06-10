@@ -30,8 +30,8 @@ public abstract class AbstractPropertyDefinition implements Serializable
 	 *            the property owner
 	 * @param property
 	 *            its name
-	 * @param model
-	 *            the enclosing model
+	 * @param modelCallback
+	 *            the reference to the {@link ModelCallback}
 	 */
 	public AbstractPropertyDefinition(Object owner, String property, ModelCallback modelCallback)
 	{
@@ -57,9 +57,9 @@ public abstract class AbstractPropertyDefinition implements Serializable
 	}
 
 	/**
-	 * @return the model
+	 * @return the modelCallback
 	 */
-	public ModelCallback getModel()
+	public ModelCallback getModelCallback()
 	{
 		return modelCallback;
 	}

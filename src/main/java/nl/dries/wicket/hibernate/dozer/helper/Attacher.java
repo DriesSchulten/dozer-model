@@ -30,15 +30,19 @@ public class Attacher
 	/** The Hibernate session */
 	private final SessionFinder sessionFinder;
 
+	/** The property to attach */
+	private final AbstractPropertyDefinition propertyDefinition;
+
 	/**
 	 * Construct
 	 * 
-	 * @param sessionFinder
-	 *            Hibernate {@link SessionFinder}
+	 * @param def
+	 *            the {@link AbstractPropertyDefinition}
 	 */
-	public Attacher(SessionFinder sessionFinder)
+	public Attacher(AbstractPropertyDefinition def)
 	{
-		this.sessionFinder = sessionFinder;
+		this.propertyDefinition = def;
+		this.sessionFinder = def.getModelCallback().getSessionFinder();
 	}
 
 	/**
@@ -48,7 +52,7 @@ public class Attacher
 	 *            the {@link SimplePropertyDefinition}
 	 * @return the value of the property
 	 */
-	public Object attach(SimplePropertyDefinition def)
+	protected Object attach(SimplePropertyDefinition def)
 	{
 		SessionImplementor sessionImpl = (SessionImplementor) sessionFinder.getHibernateSession(def
 			.getHibernateProperty().getEntityClass());
@@ -88,7 +92,7 @@ public class Attacher
 	 * @param def
 	 *            the {@link CollectionPropertyDefinition}
 	 */
-	public Object attach(CollectionPropertyDefinition def)
+	protected Object attach(CollectionPropertyDefinition def)
 	{
 		SessionImplementor sessionImpl = (SessionImplementor) sessionFinder.getHibernateSession(def.getOwner()
 			.getClass());
@@ -179,19 +183,17 @@ public class Attacher
 	}
 
 	/**
-	 * Type safe attach
+	 * Attach driver
 	 * 
-	 * @param def
-	 *            the {@link AbstractPropertyDefinition}
 	 * @return the attached object
 	 */
-	public Object attach(AbstractPropertyDefinition def)
+	public Object attach()
 	{
-		if (def instanceof SimplePropertyDefinition)
+		if (propertyDefinition instanceof SimplePropertyDefinition)
 		{
-			return attach((SimplePropertyDefinition) def);
+			return attach((SimplePropertyDefinition) propertyDefinition);
 		}
 
-		return attach((CollectionPropertyDefinition) def);
+		return attach((CollectionPropertyDefinition) propertyDefinition);
 	}
 }

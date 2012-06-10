@@ -111,8 +111,7 @@ public class ProxyBuilder
 			}
 
 			// Attach the 'real' value
-			Object realValue = new Attacher(propertyDefinition.getModel().getSessionFinder())
-				.attach(propertyDefinition);
+			Object realValue = new Attacher(propertyDefinition).attach();
 
 			// Set the value in the original object, thus replacing the proxy
 			ObjectHelper.setValue(propertyDefinition.getOwner(), propertyDefinition.getProperty(), realValue);
