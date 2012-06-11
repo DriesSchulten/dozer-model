@@ -113,7 +113,7 @@ public class ProxyBuilder
 		@Override
 		public Object invoke(Object self, Method method, Method proceed, Object[] args) throws Throwable
 		{
-			LOG.debug("Intercept: " + method.getName());
+			LOG.trace("Intercept: " + method.getName());
 
 			if ("writeReplace".equals(method.getName()))
 			{

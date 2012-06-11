@@ -90,15 +90,12 @@ public class HibernateObjectVisitor implements VisitorStrategy
 					if (!Hibernate.isInitialized(value))
 					{
 						handleProxy(object, identifier, propertyName, value);
-						sessionImpl.getPersistenceContext().removeCollectionHolder(value);
 
 						LOG.debug("Detaching proxy [#{} {}.{}]", logVals);
 					}
 					else if (value instanceof PersistentCollection)
 					{
 						Object plain = convertToPlainCollection(object, propertyName, value);
-						ObjectHelper.setValue(object, propertyName, plain);
-						sessionImpl.getPersistenceContext().removeCollectionHolder(value);
 
 						LOG.debug("Replacing initialized collection [#{} {}.{}]", logVals);
 
