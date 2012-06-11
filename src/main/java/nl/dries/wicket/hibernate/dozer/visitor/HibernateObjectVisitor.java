@@ -108,7 +108,6 @@ public class HibernateObjectVisitor implements VisitorStrategy
 					{
 						value = ObjectHelper.deproxy(value);
 						ObjectHelper.setValue(object, propertyName, value);
-						// sessionImpl.getPersistenceContext().removeEntry(value);
 
 						LOG.debug("Deproxying intialized value [#{} {}.{}]", logVals);
 
@@ -121,9 +120,6 @@ public class HibernateObjectVisitor implements VisitorStrategy
 				}
 			}
 		}
-
-		// Remove object from Hibernate session context, because *we* altered it
-		sessionImpl.getPersistenceContext().removeEntry(object);
 
 		return toWalk;
 	}
