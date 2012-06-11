@@ -104,6 +104,11 @@ public class BasicObjectVisitor implements VisitorStrategy
 							setValue(descriptor.getWriteMethod(), object, ProxyBuilder.buildProxy(prop));
 						}
 					}
+					else
+					{
+						LOG.debug("Ignoring own proxied value [{}.{}]", object.getClass().getName(),
+							descriptor.getName());
+					}
 				}
 			}
 		}

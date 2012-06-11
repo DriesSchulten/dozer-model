@@ -115,7 +115,7 @@ public class HibernateObjectVisitor implements VisitorStrategy
 					}
 					else
 					{
-						LOG.debug("Ignoring cglib proxied value [#{} {}.{}]", logVals);
+						LOG.debug("Ignoring own proxied value [#{} {}.{}]", logVals);
 					}
 				}
 			}
