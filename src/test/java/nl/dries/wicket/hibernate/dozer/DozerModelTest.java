@@ -97,6 +97,7 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 		model.detach();
 		model = serialize(model);
 
+		assertEquals(person, model.getObject().getPerson());
 		assertEquals(person.getAdresses().get(0), model.getObject().getPerson().getAdresses().get(0));
 		assertEquals(person.getName(), model.getObject().getPerson().getName());
 	}

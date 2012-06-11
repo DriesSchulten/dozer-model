@@ -3,16 +3,22 @@ package nl.dries.wicket.hibernate.dozer.proxy;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
-import net.sf.cglib.core.DefaultNamingPolicy;
-import net.sf.cglib.core.Predicate;
-import net.sf.cglib.proxy.Enhancer;
-import net.sf.cglib.proxy.MethodInterceptor;
-import net.sf.cglib.proxy.MethodProxy;
+import javassist.util.proxy.MethodHandler;
+import javassist.util.proxy.ProxyFactory;
+import javassist.util.proxy.ProxyObject;
 import nl.dries.wicket.hibernate.dozer.helper.Attacher;
 import nl.dries.wicket.hibernate.dozer.helper.ObjectHelper;
 import nl.dries.wicket.hibernate.dozer.properties.AbstractPropertyDefinition;
+import nl.dries.wicket.hibernate.dozer.properties.SimplePropertyDefinition;
 
+import org.hibernate.HibernateException;
+import org.hibernate.engine.spi.SessionImplementor;
+import org.hibernate.proxy.HibernateProxy;
+import org.hibernate.proxy.LazyInitializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,41 +46,49 @@ public class ProxyBuilder
 	 */
 	public static Object buildProxy(AbstractPropertyDefinition property)
 	{
-		Enhancer enhancer = new Enhancer();
+		ProxyFactory factory = new ProxyFactory();
 
 		Class<?> superType = property.getPropertyType();
 
+		List<Class<?>> interfaces = new ArrayList<>(Arrays.asList(Serializable.class, Proxied.class));
+
 		if (!superType.isInterface())
 		{
-			enhancer.setSuperclass(property.getPropertyType());
-			enhancer.setInterfaces(new Class[] { Serializable.class, Proxied.class });
+			factory.setSuperclass(property.getPropertyType());
 		}
 		else
 		{
-			enhancer.setInterfaces(new Class[] { superType, Serializable.class, Proxied.class });
+			interfaces.add(superType);
 		}
 
-		enhancer.setCallback(new LoaderCallback(property));
-
-		enhancer.setNamingPolicy(new DefaultNamingPolicy()
+		// Normal property: HibernateProxy
+		if (property instanceof SimplePropertyDefinition)
 		{
-			/** */
-			@Override
-			public String getClassName(String prefix, String source, Object key, Predicate names)
-			{
-				return super.getClassName("DOZER_" + prefix, source, key, names);
-			}
-		});
+			interfaces.add(HibernateProxy.class);
+		}
 
-		return enhancer.create();
+		factory.setInterfaces(interfaces.toArray(new Class[] {}));
+		Class<?> proxyClass = factory.createClass();
+		Object proxy = null;
+		try
+		{
+			proxy = proxyClass.newInstance();
+		}
+		catch (InstantiationException | IllegalAccessException e)
+		{
+			LOG.error("Error creating Javassist proxy", e);
+		}
+		((ProxyObject) proxy).setHandler(new LoaderCallback(property));
+
+		return proxy;
 	}
 
 	/**
-	 * CGLib callback to load the original Hibernate object on invocation
+	 * Proxy method handler callback
 	 * 
 	 * @author dries
 	 */
-	private static class LoaderCallback implements MethodInterceptor, Serializable
+	private static class LoaderCallback implements MethodHandler, Serializable
 	{
 		/** Default */
 		private static final long serialVersionUID = 1L;
@@ -93,11 +107,11 @@ public class ProxyBuilder
 		}
 
 		/**
-		 * @see net.sf.cglib.proxy.MethodInterceptor#intercept(java.lang.Object, java.lang.reflect.Method,
-		 *      java.lang.Object[], net.sf.cglib.proxy.MethodProxy)
+		 * @see javassist.util.proxy.MethodHandler#invoke(java.lang.Object, java.lang.reflect.Method,
+		 *      java.lang.reflect.Method, java.lang.Object[])
 		 */
 		@Override
-		public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable
+		public Object invoke(Object self, Method method, Method proceed, Object[] args) throws Throwable
 		{
 			LOG.debug("Intercept: " + method.getName());
 
@@ -109,6 +123,10 @@ public class ProxyBuilder
 			{
 				return null;
 			}
+			else if (method.getName().equals("getHibernateLazyInitializer"))
+			{
+				return new ProxiedHibernateInitializer((SimplePropertyDefinition) propertyDefinition);
+			}
 
 			// Attach the 'real' value
 			Object realValue = new Attacher(propertyDefinition).attach();
@@ -117,7 +135,7 @@ public class ProxyBuilder
 			ObjectHelper.setValue(propertyDefinition.getOwner(), propertyDefinition.getProperty(), realValue);
 
 			// Invoke the requested method on the real value
-			return proxy.invoke(realValue, args);
+			return method.invoke(realValue, args);
 		}
 	}
 
@@ -152,6 +170,197 @@ public class ProxyBuilder
 		{
 			return buildProxy(propertyDefinition);
 		}
+	}
+
+	/**
+	 * 'Fake' Hibernate {@link LazyInitializer} to make our proxies {@link HibernateProxy}s
+	 * 
+	 * @author schulten
+	 */
+	private static class ProxiedHibernateInitializer implements Serializable, LazyInitializer
+	{
+		/** Default */
+		private static final long serialVersionUID = 1L;
+
+		/** The detached property */
+		private final SimplePropertyDefinition property;
+
+		/**
+		 * Construct
+		 * 
+		 * @param property
+		 */
+		public ProxiedHibernateInitializer(SimplePropertyDefinition property)
+		{
+			this.property = property;
+		}
+
+		/**
+		 * @see org.hibernate.proxy.LazyInitializer#initialize()
+		 */
+		@Override
+		public void initialize() throws HibernateException
+		{
+		}
+
+		/**
+		 * @see org.hibernate.proxy.LazyInitializer#getIdentifier()
+		 */
+		@Override
+		public Serializable getIdentifier()
+		{
+			return property.getHibernateProperty().getId();
+		}
+
+		/**
+		 * @see org.hibernate.proxy.LazyInitializer#setIdentifier(java.io.Serializable)
+		 */
+		@Override
+		public void setIdentifier(Serializable id)
+		{
+			// No support?
+		}
+
+		/**
+		 * @see org.hibernate.proxy.LazyInitializer#getEntityName()
+		 */
+		@Override
+		public String getEntityName()
+		{
+			return property.getHibernateProperty().getEntityClass().getName();
+		}
+
+		/**
+		 * @see org.hibernate.proxy.LazyInitializer#getPersistentClass()
+		 */
+		@SuppressWarnings("rawtypes")
+		@Override
+		public Class getPersistentClass()
+		{
+			return property.getHibernateProperty().getEntityClass();
+		}
+
+		/**
+		 * @see org.hibernate.proxy.LazyInitializer#isUninitialized()
+		 */
+		@Override
+		public boolean isUninitialized()
+		{
+			return true;
+		}
+
+		/**
+		 * @see org.hibernate.proxy.LazyInitializer#getImplementation()
+		 */
+		@Override
+		public Object getImplementation()
+		{
+			// Attach the 'real' value
+			Object realValue = new Attacher(property).attach();
+
+			// The resulting object may as well be a newly created Hibernate proxy...
+			if (realValue instanceof HibernateProxy)
+			{
+				realValue = ((HibernateProxy) realValue).getHibernateLazyInitializer().getImplementation();
+			}
+
+			// Set the value in the original object, thus replacing the proxy
+			ObjectHelper.setValue(property.getOwner(), property.getProperty(), realValue);
+
+			return realValue;
+		}
+
+		/**
+		 * @see org.hibernate.proxy.LazyInitializer#getImplementation(org.hibernate.engine.spi.SessionImplementor)
+		 */
+		@Override
+		public Object getImplementation(SessionImplementor session) throws HibernateException
+		{
+			return getImplementation();
+		}
+
+		/**
+		 * @see org.hibernate.proxy.LazyInitializer#setImplementation(java.lang.Object)
+		 */
+		@Override
+		public void setImplementation(Object target)
+		{
+			// Ignore?
+		}
+
+		/**
+		 * @see org.hibernate.proxy.LazyInitializer#isReadOnlySettingAvailable()
+		 */
+		@Override
+		public boolean isReadOnlySettingAvailable()
+		{
+			return false;
+		}
+
+		/**
+		 * @see org.hibernate.proxy.LazyInitializer#isReadOnly()
+		 */
+		@Override
+		public boolean isReadOnly()
+		{
+			return false;
+		}
+
+		/**
+		 * @see org.hibernate.proxy.LazyInitializer#setReadOnly(boolean)
+		 */
+		@Override
+		public void setReadOnly(boolean readOnly)
+		{
+			// Ignore
+		}
+
+		/**
+		 * @see org.hibernate.proxy.LazyInitializer#getSession()
+		 */
+		@Override
+		public SessionImplementor getSession()
+		{
+			return (SessionImplementor) property.getModelCallback().getSessionFinder()
+				.getHibernateSession(getPersistentClass());
+		}
+
+		/**
+		 * @see org.hibernate.proxy.LazyInitializer#setSession(org.hibernate.engine.spi.SessionImplementor)
+		 */
+		@Override
+		public void setSession(SessionImplementor session) throws HibernateException
+		{
+			// Not used
+		}
+
+		/**
+		 * @see org.hibernate.proxy.LazyInitializer#unsetSession()
+		 */
+		@Override
+		public void unsetSession()
+		{
+			// Also ignore
+		}
+
+		/**
+		 * @see org.hibernate.proxy.LazyInitializer#setUnwrap(boolean)
+		 */
+		@Override
+		public void setUnwrap(boolean unwrap)
+		{
+			// Ignore
+		}
+
+		/**
+		 * @see org.hibernate.proxy.LazyInitializer#isUnwrap()
+		 */
+		@Override
+		public boolean isUnwrap()
+		{
+			return false;
+		}
+
 	}
 
 	/**
