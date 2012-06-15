@@ -1,17 +1,8 @@
 package nl.dries.wicket.hibernate.dozer;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 
-import nl.dries.wicket.hibernate.dozer.helper.Attacher;
 import nl.dries.wicket.hibernate.dozer.helper.ModelCallback;
-import nl.dries.wicket.hibernate.dozer.properties.AbstractPropertyDefinition;
-import nl.dries.wicket.hibernate.dozer.properties.CollectionPropertyDefinition;
-import nl.dries.wicket.hibernate.dozer.properties.SimplePropertyDefinition;
 import nl.dries.wicket.hibernate.dozer.visitor.ObjectVisitor;
 
 import org.apache.wicket.injection.Injector;
@@ -43,12 +34,6 @@ public class DozerModel<T> implements IModel<T>, ModelCallback
 
 	/** Detached object instance */
 	private T detachedObject;
-
-	/** Map containing detached properties */
-	private Map<Object, List<SimplePropertyDefinition>> detachedProperties;
-
-	/** Map containing detached collection */
-	private Map<Object, List<CollectionPropertyDefinition>> detachedCollections;
 
 	/** */
 	@SpringBean
@@ -98,59 +83,11 @@ public class DozerModel<T> implements IModel<T>, ModelCallback
 		{
 			object = detachedObject;
 
-			List<Attacher<Object>> list = buildAttachers(detachedProperties);
-			if (list != null)
-			{
-				for (Attacher<Object> attacher : list)
-				{
-					attacher.doAttach();
-				}
-			}
-
 			// Remove detached state
 			detachedObject = null;
 		}
 
-		// We always need to re-attach unintialized collections, when Hiberate flushes the collections are re-wrapped
-		// (creating new collection proxies) this means that is is possible that a flush has happend between our 2
-		// getObject calls within the same request-cycle and thus invalidating or created collection proxy.
-		List<Attacher<Object>> list = buildAttachers(detachedCollections);
-		if (list != null)
-		{
-			for (Attacher<Object> attacher : list)
-			{
-				attacher.doAttach();
-			}
-		}
-
 		return object;
-	}
-
-	/**
-	 * @param detached
-	 *            the map for which to build {@link Attacher}s
-	 * @return set with {@link Attacher}s
-	 */
-	@SuppressWarnings("unchecked")
-	private List<Attacher<Object>> buildAttachers(Map<?, ?> detached)
-	{
-		List<Attacher<Object>> list = null;
-
-		if (detached != null)
-		{
-			list = new ArrayList<>(detached.size());
-
-			// Re-attach properties
-			for (Entry<?, ?> entry : detached.entrySet())
-			{
-				List<? extends AbstractPropertyDefinition> definitions = new ArrayList<>(
-					(List<? extends AbstractPropertyDefinition>) entry.getValue());
-				list.add(new Attacher<Object>(entry.getKey(), sessionFinder.getHibernateSession(entry.getKey()
-					.getClass()), definitions, this));
-			}
-		}
-
-		return list;
 	}
 
 	/**
@@ -161,8 +98,6 @@ public class DozerModel<T> implements IModel<T>, ModelCallback
 	{
 		// Reset previous object state
 		detachedObject = null;
-		detachedCollections = null;
-		detachedProperties = null;
 
 		this.object = object;
 	}
@@ -176,10 +111,6 @@ public class DozerModel<T> implements IModel<T>, ModelCallback
 	{
 		if (object != null && detachedObject == null)
 		{
-			// Reset previous detached state
-			detachedProperties = null;
-			detachedCollections = null;
-
 			if (object instanceof HibernateProxy)
 			{
 				HibernateProxy proxy = (HibernateProxy) object;
@@ -194,57 +125,12 @@ public class DozerModel<T> implements IModel<T>, ModelCallback
 	}
 
 	/**
-	 * @see nl.dries.wicket.hibernate.dozer.helper.ModelCallback#addDetachedProperty(java.lang.Object,
-	 *      nl.dries.wicket.hibernate.dozer.properties.AbstractPropertyDefinition)
+	 * @see nl.dries.wicket.hibernate.dozer.helper.ModelCallback#getSessionFinder()
 	 */
 	@Override
-	public void addDetachedProperty(Object owner, AbstractPropertyDefinition def)
+	public SessionFinder getSessionFinder()
 	{
-		if (def instanceof SimplePropertyDefinition)
-		{
-			if (detachedProperties == null)
-			{
-				detachedProperties = new HashMap<>();
-			}
-
-			if (!detachedProperties.containsKey(owner))
-			{
-				detachedProperties.put(owner, new ArrayList<SimplePropertyDefinition>());
-			}
-
-			detachedProperties.get(owner).add((SimplePropertyDefinition) def);
-		}
-		else
-		{
-			if (detachedCollections == null)
-			{
-				detachedCollections = new HashMap<>();
-			}
-
-			if (!detachedCollections.containsKey(owner))
-			{
-				detachedCollections.put(owner, new ArrayList<CollectionPropertyDefinition>());
-			}
-
-			detachedCollections.get(owner).add((CollectionPropertyDefinition) def);
-		}
-	}
-
-	/**
-	 * @see nl.dries.wicket.hibernate.dozer.helper.ModelCallback#removeProperty(java.lang.Object,
-	 *      nl.dries.wicket.hibernate.dozer.properties.CollectionPropertyDefinition)
-	 */
-	@Override
-	public void removeProperty(Object owner, CollectionPropertyDefinition def)
-	{
-		if (detachedCollections != null)
-		{
-			List<CollectionPropertyDefinition> list = detachedCollections.get(owner);
-			if (list != null)
-			{
-				list.remove(def);
-			}
-		}
+		return sessionFinder;
 	}
 
 	/**

@@ -1,9 +1,9 @@
 package nl.dries.wicket.hibernate.dozer.properties;
 
-import java.io.Serializable;
 import java.lang.reflect.Field;
 
 import nl.dries.wicket.hibernate.dozer.helper.HibernateCollectionType;
+import nl.dries.wicket.hibernate.dozer.helper.ModelCallback;
 
 /**
  * Collecition property definition
@@ -22,18 +22,18 @@ public class CollectionPropertyDefinition extends AbstractPropertyDefinition
 	 * Construct
 	 * 
 	 * @param owner
-	 *            the {@link Class} of the property owner
-	 * @param ownerId
-	 *            it's id
+	 *            the property owner
 	 * @param property
 	 *            the name of the field
+	 * @param modelCallback
+	 *            the {@link ModelCallback}
 	 * @param type
 	 *            {@link HibernateCollectionType}
 	 */
-	public CollectionPropertyDefinition(Class<? extends Serializable> owner, Serializable ownerId, String property,
+	public CollectionPropertyDefinition(Object owner, String property, ModelCallback modelCallback,
 		HibernateCollectionType type)
 	{
-		super(owner, ownerId, property);
+		super(owner, property, modelCallback);
 		this.type = type;
 	}
 
@@ -50,7 +50,7 @@ public class CollectionPropertyDefinition extends AbstractPropertyDefinition
 	 */
 	public String getRole()
 	{
-		return getPropertyOwnerClass(getOwner()) + "." + getProperty();
+		return getPropertyOwnerClass(getOwner().getClass()) + "." + getProperty();
 	}
 
 	/**
@@ -71,5 +71,14 @@ public class CollectionPropertyDefinition extends AbstractPropertyDefinition
 		}
 
 		return getPropertyOwnerClass(clazz.getSuperclass());
+	}
+
+	/**
+	 * @see nl.dries.wicket.hibernate.dozer.properties.AbstractPropertyDefinition#getPropertyType()
+	 */
+	@Override
+	public Class<?> getPropertyType()
+	{
+		return getCollectionType().getPlainInterface();
 	}
 }

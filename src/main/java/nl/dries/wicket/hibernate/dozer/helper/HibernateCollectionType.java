@@ -5,7 +5,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeSet;
 
 import org.hibernate.collection.PersistentBag;
@@ -25,13 +27,13 @@ import org.slf4j.LoggerFactory;
 public enum HibernateCollectionType
 {
 	/** */
-	LIST(PersistentBag.class, ArrayList.class),
+	LIST(PersistentBag.class, ArrayList.class, List.class),
 	/** */
-	SET(PersistentSet.class, HashSet.class),
+	SET(PersistentSet.class, HashSet.class, Set.class),
 	/** */
-	SORTED_SET(PersistentSortedSet.class, TreeSet.class),
+	SORTED_SET(PersistentSortedSet.class, TreeSet.class, Set.class),
 	/** */
-	MAP(PersistentMap.class, HashMap.class);
+	MAP(PersistentMap.class, HashMap.class, Map.class);
 
 	/** Logger */
 	private static final Logger LOG = LoggerFactory.getLogger(HibernateCollectionType.class);
@@ -42,6 +44,9 @@ public enum HibernateCollectionType
 	/** Plain 'Java collections' type */
 	private Class<?> plainTypeClass;
 
+	/** Plain interface collection type */
+	private Class<?> plainInterface;
+
 	/**
 	 * Construct
 	 * 
@@ -49,10 +54,19 @@ public enum HibernateCollectionType
 	 * @param plainTypeClass
 	 */
 	private HibernateCollectionType(Class<? extends PersistentCollection> hibernateCollectionClass,
-		Class<?> plainTypeClass)
+		Class<?> plainTypeClass, Class<?> plainInterface)
 	{
 		this.hibernateCollectionClass = hibernateCollectionClass;
 		this.plainTypeClass = plainTypeClass;
+		this.plainInterface = plainInterface;
+	}
+
+	/**
+	 * @return the plainInterface
+	 */
+	public Class<?> getPlainInterface()
+	{
+		return plainInterface;
 	}
 
 	/**

@@ -28,9 +28,10 @@ import nl.dries.wicket.hibernate.dozer.model.Person;
 import nl.dries.wicket.hibernate.dozer.model.RootTreeObject;
 
 import org.apache.wicket.model.Model;
-import org.hibernate.collection.PersistentCollection;
 import org.hibernate.proxy.HibernateProxy;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Test the {@link DozerModel}
@@ -39,6 +40,9 @@ import org.junit.Test;
  */
 public class DozerModelTest extends AbstractWicketHibernateTest
 {
+	/** Logger */
+	private static final Logger LOG = LoggerFactory.getLogger(DozerModelTest.class);
+
 	/**
 	 * Model ceate and get
 	 */
@@ -93,8 +97,9 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 		model.detach();
 		model = serialize(model);
 
-		assertEquals(getSession().load(Adres.class, 1L), model.getObject());
 		assertEquals(person, model.getObject().getPerson());
+		assertEquals(person.getAdresses().get(0), model.getObject().getPerson().getAdresses().get(0));
+		assertEquals(person.getName(), model.getObject().getPerson().getName());
 	}
 
 	/**
@@ -122,9 +127,6 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 		DozerModel<Person> model = new DozerModel<>(person);
 		model.detach();
 		model = serialize(model);
-
-		closeSession();
-		openSession();
 
 		assertEquals(person, model.getObject());
 		assertEquals(adres, model.getObject().getAdresses().get(0));
@@ -185,11 +187,6 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 		DozerModel<AbstractTreeObject> model = new DozerModel<>(buildTree());
 		model.detach();
 		model = serialize(model);
-
-		getSession().flush();
-		getSession().clear();
-		closeSession();
-		openSession();
 
 		AbstractTreeObject newChild = new DescTreeObject();
 		newChild.setName("Temp");
@@ -252,6 +249,8 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 		model.detach();
 		model = serialize(model);
 
+		getSession().clear();
+
 		// Trigger attach
 		model.getObject();
 
@@ -293,11 +292,6 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 		model.detach();
 		model = serialize(model);
 
-		getSession().flush();
-		getSession().clear();
-		closeSession();
-		openSession();
-
 		model.getObject().setName("edited");
 		Person loaded = (Person) getSession().load(Person.class, 1L);
 		getSession().saveOrUpdate(loaded);
@@ -315,11 +309,6 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 		person.setId(1L);
 		person.setName("person");
 		getSession().saveOrUpdate(person);
-
-		getSession().flush();
-		getSession().clear();
-		closeSession();
-		openSession();
 
 		person = (Person) getSession().load(Person.class, 1L);
 		getSession().evict(person);
@@ -503,42 +492,6 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 	}
 
 	/**
-	 * Intialize a collection multiple times, check nu x-times loading
-	 */
-	@Test
-	public void testMultipleInitialize()
-	{
-		Person person = new Person();
-		person.setId(1L);
-		person.setName("test");
-
-		Adres adres = new Adres();
-		adres.setId(1L);
-		adres.setStreet("street");
-		adres.setPerson(person);
-		person.getAdresses().add(adres);
-		adres = new Adres();
-		adres.setId(2L);
-		adres.setStreet("street 2");
-		adres.setPerson(person);
-		person.getAdresses().add(adres);
-
-		getSession().saveOrUpdate(person);
-		getSession().flush();
-		getSession().clear();
-
-		DozerModel<Person> model = new DozerModel<>(Person.class, 1L);
-		model.detach();
-		model = serialize(model);
-
-		model.getObject();
-		assertFalse(((PersistentCollection) model.getObject().getAdresses()).wasInitialized());
-		model.getObject().getAdresses().size();
-		getSession().flush();
-		assertTrue(((PersistentCollection) model.getObject().getAdresses()).wasInitialized());
-	}
-
-	/**
 	 * A non Hibernate object as model-object, but its properties are Hibernate objects, so the should be handled
 	 * correctly.
 	 */
@@ -623,6 +576,33 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 	}
 
 	/**
+	 * Test a collection mapped with: 'orphanRemoval'
+	 */
+	@Test
+	public void testOrphanRemovelAsociation()
+	{
+		MapObject obj = new MapObject();
+		obj.setId(1L);
+		getSession().saveOrUpdate(obj);
+
+		Adres adres = new Adres();
+		adres.setId(1L);
+		adres.setStreet("test");
+		obj.getAdresses().add(adres);
+		getSession().saveOrUpdate(adres);
+
+		getSession().flush();
+		getSession().clear();
+
+		DozerModel<MapObject> model = new DozerModel<>((MapObject) getSession().load(MapObject.class, 1L));
+		model.detach();
+
+		getSession().clear();
+
+		assertEquals("test", model.getObject().getAdresses().get(0).getStreet());
+	}
+
+	/**
 	 * @see nl.dries.wicket.hibernate.dozer.AbstractWicketHibernateTest#getEntities()
 	 */
 	@Override
@@ -647,7 +627,11 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 			ObjectOutputStream os = new ObjectOutputStream(baos);
 			os.writeObject(in);
 
+			closeSession();
+
 			byte[] bytes = baos.toByteArray();
+
+			openSession();
 
 			ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
 			ObjectInputStream is = new ObjectInputStream(bais);
@@ -655,6 +639,7 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 		}
 		catch (IOException | ClassNotFoundException e)
 		{
+			LOG.error("Fout bij de-serialiseren", e);
 			fail(e.getMessage());
 		}
 

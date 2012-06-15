@@ -1,84 +1,49 @@
 package nl.dries.wicket.hibernate.dozer.helper;
 
-import java.util.List;
+import java.io.Serializable;
 
+import nl.dries.wicket.hibernate.dozer.SessionFinder;
 import nl.dries.wicket.hibernate.dozer.properties.AbstractPropertyDefinition;
 import nl.dries.wicket.hibernate.dozer.properties.CollectionPropertyDefinition;
 import nl.dries.wicket.hibernate.dozer.properties.SimplePropertyDefinition;
 
 import org.hibernate.EntityMode;
-import org.hibernate.Session;
+import org.hibernate.LockMode;
 import org.hibernate.collection.PersistentCollection;
 import org.hibernate.engine.EntityKey;
 import org.hibernate.engine.PersistenceContext;
 import org.hibernate.engine.SessionFactoryImplementor;
 import org.hibernate.engine.SessionImplementor;
+import org.hibernate.engine.Status;
+import org.hibernate.engine.Versioning;
+import org.hibernate.metadata.ClassMetadata;
 import org.hibernate.persister.collection.CollectionPersister;
 import org.hibernate.persister.entity.EntityPersister;
+import org.hibernate.type.TypeHelper;
 
 /**
  * Hibernate object (re-)attacher
  * 
  * @author dries
- * 
- * @param <T>
- *            type of the object to re-attach
  */
-public class Attacher<T>
+public class Attacher
 {
 	/** The Hibernate session */
-	private final SessionImplementor sessionImpl;
+	private final SessionFinder sessionFinder;
 
-	/** The object to attach */
-	private final T toAttach;
-
-	/** Properties to attach */
-	private final List<? extends AbstractPropertyDefinition> properties;
-
-	/** Callback to the model */
-	private final ModelCallback callback;
+	/** The property to attach */
+	private final AbstractPropertyDefinition propertyDefinition;
 
 	/**
 	 * Construct
 	 * 
-	 * @param toAttach
-	 *            object to attach to
-	 * @param session
-	 *            Hibernate {@link Session}
-	 * @param detachedProperties
-	 *            detached properties
-	 * @param detachedCollections
-	 *            detached collections
-	 * @parma callback the {@link ModelCallback}
+	 * @param def
+	 *            the {@link AbstractPropertyDefinition}
 	 */
-	public Attacher(T toAttach, Session session, List<? extends AbstractPropertyDefinition> detachedProperties,
-		ModelCallback callback)
+	public Attacher(AbstractPropertyDefinition def)
 	{
-		this.toAttach = toAttach;
-		this.sessionImpl = (SessionImplementor) session;
-		this.properties = detachedProperties;
-		this.callback = callback;
-	}
-
-	/**
-	 * Attach
-	 */
-	public void doAttach()
-	{
-		if (properties != null)
-		{
-			for (AbstractPropertyDefinition def : properties)
-			{
-				if (def instanceof SimplePropertyDefinition)
-				{
-					attach((SimplePropertyDefinition) def);
-				}
-				else
-				{
-					attach((CollectionPropertyDefinition) def);
-				}
-			}
-		}
+		this.propertyDefinition = def;
+		this.sessionFinder = def.getModelCallback().getSessionFinder();
 	}
 
 	/**
@@ -86,10 +51,14 @@ public class Attacher<T>
 	 * 
 	 * @param def
 	 *            the {@link SimplePropertyDefinition}
+	 * @return the value of the property
 	 */
-	protected void attach(SimplePropertyDefinition def)
+	protected Object attach(SimplePropertyDefinition def)
 	{
-		EntityPersister persister = getPersister(def.getHibernateProperty());
+		SessionImplementor sessionImpl = (SessionImplementor) sessionFinder.getHibernateSession(def
+			.getHibernateProperty().getEntityClass());
+
+		EntityPersister persister = getPersister(def.getHibernateProperty(), sessionImpl);
 		PersistenceContext persistenceContext = sessionImpl.getPersistenceContext();
 
 		EntityKey key = new EntityKey(def.getHibernateProperty().getId(), persister, EntityMode.POJO);
@@ -115,7 +84,7 @@ public class Attacher<T>
 		}
 
 		// Set the property to te real value, or a proxy
-		ObjectHelper.setValue(toAttach, def.getProperty(), instance);
+		return instance;
 	}
 
 	/**
@@ -124,48 +93,55 @@ public class Attacher<T>
 	 * @param def
 	 *            the {@link CollectionPropertyDefinition}
 	 */
-	protected void attach(CollectionPropertyDefinition def)
+	protected Object attach(CollectionPropertyDefinition def)
 	{
-		Object currentValue = ObjectHelper.getValue(toAttach, def.getProperty());
+		SessionImplementor sessionImpl = (SessionImplementor) sessionFinder.getHibernateSession(def.getOwner()
+			.getClass());
 
-		if (!isInitialized(currentValue))
+		CollectionPersister persister = getCollectionPersister(def, sessionImpl);
+		PersistenceContext persistenceContext = sessionImpl.getPersistenceContext();
+
+		ClassMetadata metadata = sessionImpl.getFactory().getClassMetadata(def.getOwner().getClass());
+		Serializable identifier = metadata.getIdentifier(def.getOwner(), sessionImpl);
+
+		PersistentCollection collection = def.getCollectionType().createCollection(sessionImpl);
+		collection.setOwner(def.getOwner());
+		collection.setSnapshot(identifier, def.getRole(), null); // Sort of 'fake' state...
+
+		persistenceContext.addUninitializedCollection(persister, collection, identifier);
+
+		// Possibly re-attach owner
+		EntityKey key = new EntityKey(identifier, getOwnPersister(def.getOwner(), sessionImpl), EntityMode.POJO);
+		if (!persistenceContext.containsEntity(key))
 		{
-			CollectionPersister persister = getCollectionPersister(def);
-			PersistenceContext persistenceContext = sessionImpl.getPersistenceContext();
+			EntityPersister ownPersister = getOwnPersister(def.getOwner(), sessionImpl);
 
-			PersistentCollection collection = def.getCollectionType().createCollection(sessionImpl);
-			collection.setOwner(toAttach);
-			collection.setSnapshot(def.getOwnerId(), def.getRole(), null); // Sort of 'fake' state...
+			Object[] values = ownPersister.getPropertyValues(def.getOwner(), EntityMode.POJO);
+			TypeHelper.deepCopy(
+				values,
+				ownPersister.getPropertyTypes(),
+				ownPersister.getPropertyUpdateability(),
+				values,
+				sessionImpl
+				);
+			Object version = Versioning.getVersion(values, ownPersister);
 
-			persistenceContext.addUninitializedCollection(persister, collection, def.getOwnerId());
-
-			// Restore value
-			ObjectHelper.setValue(toAttach, def.getProperty(), collection);
-		}
-		else
-		{
-			callback.removeProperty(toAttach, def);
-		}
-	}
-
-	/**
-	 * Check if the current object is initialized
-	 * 
-	 * @param currentValue
-	 *            the current (collection) object
-	 * @return <code>true</code> when initialized
-	 */
-	private boolean isInitialized(Object currentValue)
-	{
-		boolean initialized = currentValue != null;
-
-		if (currentValue instanceof PersistentCollection)
-		{
-			PersistentCollection persistentCollection = (PersistentCollection) currentValue;
-			initialized = persistentCollection.wasInitialized();
+			persistenceContext.addEntity(
+				def.getOwner(),
+				(ownPersister.isMutable() ? Status.MANAGED : Status.READ_ONLY),
+				values,
+				key,
+				version,
+				LockMode.NONE,
+				true,
+				ownPersister,
+				false,
+				true // will be ignored, using the existing Entry instead
+				);
 		}
 
-		return initialized;
+		// Return value
+		return collection;
 	}
 
 	/**
@@ -175,7 +151,7 @@ public class Attacher<T>
 	 *            the {@link HibernateProperty}
 	 * @return {@link EntityPersister}
 	 */
-	protected EntityPersister getPersister(HibernateProperty val)
+	protected EntityPersister getPersister(HibernateProperty val, SessionImplementor sessionImpl)
 	{
 		SessionFactoryImplementor factory = sessionImpl.getFactory();
 		return factory.getEntityPersister(val.getEntityClass().getName());
@@ -188,9 +164,36 @@ public class Attacher<T>
 	 *            the {@link AbstractPropertyDefinition}
 	 * @return a {@link CollectionPersister}
 	 */
-	protected CollectionPersister getCollectionPersister(CollectionPropertyDefinition def)
+	protected CollectionPersister getCollectionPersister(CollectionPropertyDefinition def,
+		SessionImplementor sessionImpl)
 	{
 		SessionFactoryImplementor factory = sessionImpl.getFactory();
 		return factory.getCollectionPersister(def.getRole());
+	}
+
+	/**
+	 * @param owner
+	 *            the owner
+	 * @return the {@link EntityPersister} for the object to attach
+	 */
+	protected EntityPersister getOwnPersister(Object owner, SessionImplementor sessionImpl)
+	{
+		SessionFactoryImplementor factory = sessionImpl.getFactory();
+		return factory.getEntityPersister(owner.getClass().getName());
+	}
+
+	/**
+	 * Attach driver
+	 * 
+	 * @return the attached object
+	 */
+	public Object attach()
+	{
+		if (propertyDefinition instanceof SimplePropertyDefinition)
+		{
+			return attach((SimplePropertyDefinition) propertyDefinition);
+		}
+
+		return attach((CollectionPropertyDefinition) propertyDefinition);
 	}
 }

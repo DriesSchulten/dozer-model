@@ -1,6 +1,6 @@
 # Dozer Wicket Hibernate model
 
-The Dozer Wicket Hibernate model is a Wicket IModel implementation to wrap a Hibernate object and keeping its changed values for several requests (instead of a simple LDM which re-loads a object from the database when re-attaching). To avoid serializing Hibernate proxies the model detaches any unintialized Hibernate proxies (they are replaced with `null` values and marked a attachable in the model instance) that are re-attached when invoking `getObject` again, already initialized Hibernate proxies are deproxied.
+The Dozer Wicket Hibernate model is a Wicket IModel implementation to wrap a Hibernate object and keeping its changed values for several requests (instead of a simple LDM which re-loads a object from the database when re-attaching). To avoid serializing Hibernate proxies the model detaches any unintialized Hibernate proxies (they are replaced with custom `HibernateProxy` instances) that are re-attached when invoking a method on the proxy again, already initialized Hibernate proxies are deproxied.
 
 The model also supports non-Hibernate objects, when detaching such an object it will check it for any references to Hibernate objects and detach them.
 
@@ -8,7 +8,7 @@ Multiple Hibernate factories for different databased are also supported, the `Se
 
 ## Details
 
-In the `onDetach` of the model the object tree is traversed, when a Hibernate proxy is encountered its checked if it is initialized, if so the object is deproxied. When an object is unintialized a hint is registered in the model and the original value is reset to `null`. While re-attaching the model (first invoke of `getObject` in a new request) al the registered hints are reattached as Hibernate proxies. The proxies are created using Hibernate's internal API, the same way Hibernate does while loading objects and or collections.
+In the `onDetach` of the model the object tree is traversed, when a Hibernate proxy is encountered its checked if it is initialized, if so the object is deproxied. When an object is unintialized a Javassit proxy is generated and put in place of the original value. When the proxy gets invoked its original value is attached using internal Hibernate API's and our 'own' proxy is replaced by the Hibernate proxy.
 
 ## Usage
 
@@ -23,15 +23,6 @@ In the `onDetach` of the model the object tree is traversed, when a Hibernate pr
 
 * `DozerModel` for a normal model
 * `DozerListModel` list model version (maintains a list of `DozerModel` objects)
-
-
-### Don'ts:
-
-* Don't use lazy initialization in getters (for a `List` for example), it can cause the following behavior:
-    1. Object is set in the model, contains a `List` member
-    2. On detach the `List` is still a proxy, and detached to `null`
-    3. On attach the model gets the current value of the `List` member, but because lazy initialization will return a new empty list (because the current value is `null`), the model will see this 'new' `List` as a changed value and not re-attach the original `List` as a proxy, effectively clearing the existing values...
-* Watch out for Hibernate's auto-flush behavior (if enabled for the current session), because the model changes the original loaded Hibernate objects it can cause a flush of the model in (half) detached state, causing values to be saved as `null` to the database...
 
 ## Maven repo
 

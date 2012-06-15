@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.persistence.CascadeType;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
@@ -35,6 +36,10 @@ public class Person implements Serializable
 	/** */
 	@ManyToOne
 	private AbstractOrganization organization;
+
+	/** */
+	@ElementCollection
+	private List<String> pets = new ArrayList<>();
 
 	/**
 	 * @return the id
@@ -102,6 +107,23 @@ public class Person implements Serializable
 	public void setOrganization(AbstractOrganization organization)
 	{
 		this.organization = organization;
+	}
+
+	/**
+	 * @return the pets
+	 */
+	public List<String> getPets()
+	{
+		return pets;
+	}
+
+	/**
+	 * @param pets
+	 *            the pets to set
+	 */
+	public void setPets(List<String> pets)
+	{
+		this.pets = pets;
 	}
 
 	/**
