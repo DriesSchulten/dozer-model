@@ -1,9 +1,10 @@
 package nl.dries.wicket.hibernate.dozer.visitor;
 
-import java.beans.PropertyDescriptor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import nl.dries.wicket.hibernate.dozer.SessionFinder;
@@ -15,7 +16,6 @@ import nl.dries.wicket.hibernate.dozer.properties.SimplePropertyDefinition;
 import nl.dries.wicket.hibernate.dozer.proxy.ProxyBuilder;
 import nl.dries.wicket.hibernate.dozer.proxy.ProxyBuilder.Proxied;
 
-import org.apache.commons.beanutils.PropertyUtils;
 import org.hibernate.Hibernate;
 import org.hibernate.impl.SessionImpl;
 import org.hibernate.metadata.ClassMetadata;
@@ -23,6 +23,7 @@ import org.hibernate.proxy.HibernateProxy;
 import org.hibernate.proxy.LazyInitializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.ReflectionUtils;
 
 /**
  * Visiting strategy for a plain object
@@ -64,13 +65,14 @@ public class BasicObjectVisitor implements VisitorStrategy
 	{
 		Set<Object> toWalk = new HashSet<>();
 
-		for (PropertyDescriptor descriptor : PropertyUtils.getPropertyDescriptors(object.getClass()))
+		for (Field field : getAllFields(object.getClass()))
 		{
-			Class<?> type = descriptor.getPropertyType();
-
+			Class<?> type = field.getType();
 			if (isValidType(type))
 			{
-				Object value = getValue(descriptor.getReadMethod(), object);
+				ReflectionUtils.makeAccessible(field);
+
+				Object value = getValue(field, object);
 				if (value != null)
 				{
 					SessionImpl sessionImpl = (SessionImpl) sessionFinder.getHibernateSession(type);
@@ -84,10 +86,10 @@ public class BasicObjectVisitor implements VisitorStrategy
 						if (Hibernate.isInitialized(value))
 						{
 							value = ObjectHelper.deproxy(value);
-							setValue(descriptor.getWriteMethod(), object, value);
+							setValue(field, object, value);
 
 							LOG.debug("Deproxying intialized value [{}.{}]", object.getClass().getName(),
-								descriptor.getName());
+								field.getName());
 
 							toWalk.add(value);
 						}
@@ -96,18 +98,17 @@ public class BasicObjectVisitor implements VisitorStrategy
 							LazyInitializer initializer = ((HibernateProxy) value).getHibernateLazyInitializer();
 							HibernateProperty property = new HibernateProperty(initializer.getPersistentClass(),
 								initializer.getIdentifier());
-							AbstractPropertyDefinition prop = new SimplePropertyDefinition(
-								object.getClass(), descriptor.getName(), callback, property);
+							AbstractPropertyDefinition prop = new SimplePropertyDefinition(object, field.getName(),
+								callback, property);
 
-							LOG.debug("Detaching proxy [{}.{}]", object.getClass().getName(), descriptor.getName());
+							LOG.debug("Detaching proxy [{}.{}]", object.getClass().getName(), field.getName());
 
-							setValue(descriptor.getWriteMethod(), object, ProxyBuilder.buildProxy(prop));
+							setValue(field, object, ProxyBuilder.buildProxy(prop));
 						}
 					}
 					else
 					{
-						LOG.debug("Ignoring own proxied value [{}.{}]", object.getClass().getName(),
-							descriptor.getName());
+						LOG.debug("Ignoring own proxied value [{}.{}]", object.getClass().getName(), field.getName());
 					}
 				}
 			}
@@ -138,21 +139,21 @@ public class BasicObjectVisitor implements VisitorStrategy
 	/**
 	 * Get a value by invoking a getter
 	 * 
-	 * @param method
-	 *            the get method
+	 * @param field
+	 *            the field
 	 * @param object
 	 *            the object to invoke the getter on
 	 * @return retrieved value
 	 */
-	private Object getValue(Method method, Object object)
+	private Object getValue(Field field, Object object)
 	{
 		try
 		{
-			return method.invoke(object);
+			return field.get(object);
 		}
-		catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e)
+		catch (IllegalAccessException | IllegalArgumentException e)
 		{
-			LOG.error(String.format("Error while invoking getter %s on bean %s", method, object), e);
+			LOG.error(String.format("Error while getting field %s on bean %s", field, object), e);
 		}
 
 		return null;
@@ -161,22 +162,42 @@ public class BasicObjectVisitor implements VisitorStrategy
 	/**
 	 * Sets a field
 	 * 
-	 * @param method
-	 *            using this setter method
+	 * @param field
+	 *            this field
 	 * @param object
 	 *            on this object
 	 * @param newVal
 	 *            the value to set
 	 */
-	private void setValue(Method method, Object object, Object newVal)
+	private void setValue(Field field, Object object, Object newVal)
 	{
 		try
 		{
-			method.invoke(object, new Object[] { newVal });
+			field.set(object, newVal);
 		}
-		catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e)
+		catch (IllegalAccessException | IllegalArgumentException e)
 		{
-			LOG.error(String.format("Error while invoking setter method %s on bean %s", method, object), e);
+			LOG.error(String.format("Error while setting field %s on bean %s", field, object), e);
 		}
+	}
+
+	/**
+	 * Alle declared fields on a object hierarchy
+	 * 
+	 * @param clazz
+	 *            starting {@link Class}
+	 * @return all declared {@link Field}s
+	 */
+	private List<Field> getAllFields(Class<?> clazz)
+	{
+		List<Field> fields = new ArrayList<>();
+
+		if (clazz != Object.class)
+		{
+			fields.addAll(Arrays.asList(clazz.getDeclaredFields()));
+			fields.addAll(getAllFields(clazz.getSuperclass()));
+		}
+
+		return fields;
 	}
 }
