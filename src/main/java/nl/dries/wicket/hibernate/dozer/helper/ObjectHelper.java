@@ -38,8 +38,15 @@ public final class ObjectHelper
 		try
 		{
 			Field field = ReflectionUtils.findField(object.getClass(), property);
-			ReflectionUtils.makeAccessible(field);
-			value = field.get(object);
+			if (field != null)
+			{
+				ReflectionUtils.makeAccessible(field);
+				value = field.get(object);
+			}
+			else
+			{
+				LOG.warn("Field {} not found in class {}", property, object.getClass());
+			}
 		}
 		catch (IllegalAccessException e)
 		{
@@ -64,8 +71,15 @@ public final class ObjectHelper
 		try
 		{
 			Field field = ReflectionUtils.findField(object.getClass(), property);
-			ReflectionUtils.makeAccessible(field);
-			field.set(object, value);
+			if (field != null)
+			{
+				ReflectionUtils.makeAccessible(field);
+				field.set(object, value);
+			}
+			else
+			{
+				LOG.warn("Field {} not found in class {}", property, object.getClass());
+			}
 		}
 		catch (IllegalAccessException e)
 		{
