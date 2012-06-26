@@ -34,16 +34,22 @@ public class Attacher
 	/** The property to attach */
 	private final AbstractPropertyDefinition propertyDefinition;
 
+	/** The proxy, that will be replaced by attaching */
+	private final Object proxy;
+
 	/**
 	 * Construct
 	 * 
 	 * @param def
 	 *            the {@link AbstractPropertyDefinition}
+	 * @param proxy
+	 *            the current, proxied, value
 	 */
-	public Attacher(AbstractPropertyDefinition def)
+	public Attacher(AbstractPropertyDefinition def, Object proxy)
 	{
 		this.propertyDefinition = def;
 		this.sessionFinder = def.getModelCallback().getSessionFinder();
+		this.proxy = proxy;
 	}
 
 	/**
@@ -139,6 +145,9 @@ public class Attacher
 				true // will be ignored, using the existing Entry instead
 				);
 		}
+
+		// Remove proxy from the Hibernate context
+		persistenceContext.getCollectionEntries().remove(proxy);
 
 		// Return value
 		return collection;

@@ -596,8 +596,7 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 
 		DozerModel<MapObject> model = new DozerModel<>((MapObject) getSession().load(MapObject.class, 1L));
 		model.detach();
-
-		getSession().clear();
+		model = serialize(model);
 
 		assertEquals("test", model.getObject().getAdresses().get(0).getStreet());
 	}
