@@ -13,9 +13,11 @@ import javassist.util.proxy.ProxyObject;
 import nl.dries.wicket.hibernate.dozer.helper.Attacher;
 import nl.dries.wicket.hibernate.dozer.helper.ObjectHelper;
 import nl.dries.wicket.hibernate.dozer.properties.AbstractPropertyDefinition;
+import nl.dries.wicket.hibernate.dozer.properties.CollectionPropertyDefinition;
 import nl.dries.wicket.hibernate.dozer.properties.SimplePropertyDefinition;
 
 import org.hibernate.HibernateException;
+import org.hibernate.collection.spi.PersistentCollection;
 import org.hibernate.engine.spi.SessionImplementor;
 import org.hibernate.proxy.HibernateProxy;
 import org.hibernate.proxy.LazyInitializer;
@@ -61,10 +63,13 @@ public class ProxyBuilder
 			interfaces.add(superType);
 		}
 
-		// Normal property: HibernateProxy
 		if (property instanceof SimplePropertyDefinition)
 		{
 			interfaces.add(HibernateProxy.class);
+		}
+		else if (property instanceof CollectionPropertyDefinition)
+		{
+			interfaces.add(PersistentCollection.class);
 		}
 
 		factory.setInterfaces(interfaces.toArray(new Class[] {}));
@@ -129,7 +134,7 @@ public class ProxyBuilder
 			}
 
 			// Attach the 'real' value
-			Object realValue = new Attacher(propertyDefinition).attach();
+			Object realValue = new Attacher(propertyDefinition, self).attach();
 
 			// Set the value in the original object, thus replacing the proxy
 			ObjectHelper.setValue(propertyDefinition.getOwner(), propertyDefinition.getProperty(), realValue);
@@ -256,7 +261,7 @@ public class ProxyBuilder
 		public Object getImplementation()
 		{
 			// Attach the 'real' value
-			Object realValue = new Attacher(property).attach();
+			Object realValue = new Attacher(property, null).attach();
 
 			// The resulting object may as well be a newly created Hibernate proxy...
 			if (realValue instanceof HibernateProxy)
