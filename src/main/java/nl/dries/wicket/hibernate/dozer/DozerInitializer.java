@@ -1,6 +1,3 @@
-/**
- * 
- */
 package nl.dries.wicket.hibernate.dozer;
 
 import org.apache.wicket.Application;

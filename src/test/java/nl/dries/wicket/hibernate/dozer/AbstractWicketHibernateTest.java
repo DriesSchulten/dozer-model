@@ -57,7 +57,7 @@ public abstract class AbstractWicketHibernateTest
 			new SpringComponentInjector(application, context);
 			wicketTester = new WicketTester(application);
 
-			wicketTester.getRequestCycle().setMetaData(DozerRequestCycleListener.ENDING_REQUEST, true);
+			// wicketTester.getRequestCycle().setMetaData(DozerRequestCycleListener.ENDING_REQUEST, true);
 		}
 	}
 

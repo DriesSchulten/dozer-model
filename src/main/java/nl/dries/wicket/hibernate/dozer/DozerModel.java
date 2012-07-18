@@ -135,7 +135,8 @@ public class DozerModel<T> implements IModel<T>, ModelCallback
 		RequestCycle requestCycle = RequestCycle.get();
 		if (requestCycle != null)
 		{
-			doDetach = requestCycle.getMetaData(DozerRequestCycleListener.ENDING_REQUEST);
+			Boolean val = requestCycle.getMetaData(DozerRequestCycleListener.ENDING_REQUEST);
+			doDetach = val == null || val.booleanValue();
 		}
 
 		LOG.debug("Detaching in onEndRequest? {}", doDetach);
