@@ -56,6 +56,8 @@ public abstract class AbstractWicketHibernateTest
 			MockApplication application = new MockApplication();
 			new SpringComponentInjector(application, context);
 			wicketTester = new WicketTester(application);
+
+			wicketTester.getRequestCycle().setMetaData(DozerRequestCycleListener.ENDING_REQUEST, true);
 		}
 	}
 
@@ -76,6 +78,14 @@ public abstract class AbstractWicketHibernateTest
 	protected Session getSession()
 	{
 		return session;
+	}
+
+	/**
+	 * @return the wicketTester
+	 */
+	protected WicketTester getWicketTester()
+	{
+		return wicketTester;
 	}
 
 	/**

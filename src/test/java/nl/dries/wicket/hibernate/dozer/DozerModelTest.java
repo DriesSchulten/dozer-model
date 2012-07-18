@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -27,6 +28,7 @@ import nl.dries.wicket.hibernate.dozer.model.NonHibernateObject;
 import nl.dries.wicket.hibernate.dozer.model.Person;
 import nl.dries.wicket.hibernate.dozer.model.RootTreeObject;
 
+import org.apache.wicket.ThreadContext;
 import org.apache.wicket.model.Model;
 import org.hibernate.proxy.HibernateProxy;
 import org.junit.Test;
@@ -599,6 +601,40 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 		model = serialize(model);
 
 		assertEquals("test", model.getObject().getAdresses().get(0).getStreet());
+	}
+
+	/**
+	 * Detach
+	 * 
+	 * @throws RuntimeException
+	 * @throws {@link ReflectiveOperationException}
+	 */
+	@Test
+	public void testDetachWhenNoEndingRequest() throws RuntimeException, ReflectiveOperationException
+	{
+		getWicketTester().getRequestCycle().setMetaData(DozerRequestCycleListener.ENDING_REQUEST, false);
+
+		Adres adres = new Adres();
+		adres.setId(1L);
+		adres.setStreet("test");
+		getSession().saveOrUpdate(adres);
+
+		DozerModel<Adres> model = new DozerModel<>(adres);
+		model.detach();
+
+		Field field = DozerModel.class.getDeclaredField("detachedObject");
+		field.setAccessible(true);
+
+		// Should not have been detached...
+		assertNull(field.get(model));
+
+		// And whitout valid request cycle
+		ThreadContext.setRequestCycle(null);
+
+		model.detach();
+
+		// Should be detached
+		assertNotNull(field.get(model));
 	}
 
 	/**

@@ -34,9 +34,6 @@ public class Attacher
 	/** The property to attach */
 	private final AbstractPropertyDefinition propertyDefinition;
 
-	/** The proxy, that will be replaced by attaching */
-	private final Object proxy;
-
 	/**
 	 * Construct
 	 * 
@@ -45,11 +42,10 @@ public class Attacher
 	 * @param proxy
 	 *            the current, proxied, value
 	 */
-	public Attacher(AbstractPropertyDefinition def, Object proxy)
+	public Attacher(AbstractPropertyDefinition def)
 	{
 		this.propertyDefinition = def;
 		this.sessionFinder = def.getModelCallback().getSessionFinder();
-		this.proxy = proxy;
 	}
 
 	/**

@@ -12,8 +12,11 @@ import nl.dries.wicket.hibernate.dozer.visitor.ObjectVisitor;
 
 import org.apache.wicket.injection.Injector;
 import org.apache.wicket.model.IModel;
+import org.apache.wicket.request.cycle.RequestCycle;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.hibernate.proxy.HibernateProxy;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Dozer Wicket Hibernate model. This model wil act as a detachable model. When detaching all initalized objects in the
@@ -33,6 +36,9 @@ public class DozerModel<T> implements IModel<T>, ModelCallback
 {
 	/** Default */
 	private static final long serialVersionUID = 1L;
+
+	/** Logger */
+	private static final Logger LOG = LoggerFactory.getLogger(DozerModel.class);
 
 	/** Object with proxied properties */
 	private final List<AbstractPropertyDefinition> proxiedProperties = new ArrayList<>();
@@ -92,8 +98,7 @@ public class DozerModel<T> implements IModel<T>, ModelCallback
 			List<AbstractPropertyDefinition> proxiedClone = new ArrayList<>(proxiedProperties);
 			for (AbstractPropertyDefinition def : proxiedClone)
 			{
-				Object proxy = ObjectHelper.getValue(def.getOwner(), def.getProperty());
-				ObjectHelper.setValue(def.getOwner(), def.getProperty(), new Attacher(def, proxy).attach());
+				ObjectHelper.setValue(def.getOwner(), def.getProperty(), new Attacher(def).attach());
 			}
 			proxiedProperties.clear();
 
@@ -125,7 +130,17 @@ public class DozerModel<T> implements IModel<T>, ModelCallback
 	@Override
 	public void detach()
 	{
-		if (object != null && detachedObject == null)
+		boolean doDetach = true;
+
+		RequestCycle requestCycle = RequestCycle.get();
+		if (requestCycle != null)
+		{
+			doDetach = requestCycle.getMetaData(DozerRequestCycleListener.ENDING_REQUEST);
+		}
+
+		LOG.debug("Detaching in onEndRequest? {}", doDetach);
+
+		if (doDetach && object != null && detachedObject == null)
 		{
 			if (object instanceof HibernateProxy)
 			{
