@@ -205,5 +205,6 @@ public class HibernateObjectVisitor implements VisitorStrategy
 		}
 
 		ObjectHelper.setValue(object, propertyName, ProxyBuilder.buildProxy(def));
+		callback.addProxiedProperty(def);
 	}
 }

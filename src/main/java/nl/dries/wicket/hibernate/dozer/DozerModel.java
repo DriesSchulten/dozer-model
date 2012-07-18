@@ -1,8 +1,13 @@
 package nl.dries.wicket.hibernate.dozer;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
+import nl.dries.wicket.hibernate.dozer.helper.Attacher;
 import nl.dries.wicket.hibernate.dozer.helper.ModelCallback;
+import nl.dries.wicket.hibernate.dozer.helper.ObjectHelper;
+import nl.dries.wicket.hibernate.dozer.properties.AbstractPropertyDefinition;
 import nl.dries.wicket.hibernate.dozer.visitor.ObjectVisitor;
 
 import org.apache.wicket.injection.Injector;
@@ -28,6 +33,9 @@ public class DozerModel<T> implements IModel<T>, ModelCallback
 {
 	/** Default */
 	private static final long serialVersionUID = 1L;
+
+	/** Object with proxied properties */
+	private final List<AbstractPropertyDefinition> proxiedProperties = new ArrayList<>();
 
 	/** Object instance */
 	private T object;
@@ -81,6 +89,14 @@ public class DozerModel<T> implements IModel<T>, ModelCallback
 		// Possibly restore detached state
 		if (object == null && detachedObject != null)
 		{
+			List<AbstractPropertyDefinition> proxiedClone = new ArrayList<>(proxiedProperties);
+			for (AbstractPropertyDefinition def : proxiedClone)
+			{
+				Object proxy = ObjectHelper.getValue(def.getOwner(), def.getProperty());
+				ObjectHelper.setValue(def.getOwner(), def.getProperty(), new Attacher(def, proxy).attach());
+			}
+			proxiedProperties.clear();
+
 			object = detachedObject;
 
 			// Remove detached state
@@ -131,6 +147,15 @@ public class DozerModel<T> implements IModel<T>, ModelCallback
 	public SessionFinder getSessionFinder()
 	{
 		return sessionFinder;
+	}
+
+	/**
+	 * @see nl.dries.wicket.hibernate.dozer.helper.ModelCallback#addProxiedProperty
+	 *      (nl.dries.wicket.hibernate.dozer.properties.AbstractPropertyDefinition)
+	 */
+	public void addProxiedProperty(AbstractPropertyDefinition property)
+	{
+		proxiedProperties.add(property);
 	}
 
 	/**

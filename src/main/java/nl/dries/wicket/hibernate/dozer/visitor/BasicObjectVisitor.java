@@ -104,6 +104,7 @@ public class BasicObjectVisitor implements VisitorStrategy
 							LOG.debug("Detaching proxy [{}.{}]", object.getClass().getName(), field.getName());
 
 							setValue(field, object, ProxyBuilder.buildProxy(prop));
+							callback.addProxiedProperty(prop);
 						}
 					}
 					else

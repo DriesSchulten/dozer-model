@@ -10,6 +10,7 @@ import nl.dries.wicket.hibernate.dozer.properties.SimplePropertyDefinition;
 import org.hibernate.LockMode;
 import org.hibernate.collection.spi.PersistentCollection;
 import org.hibernate.engine.internal.Versioning;
+import org.hibernate.engine.spi.CollectionKey;
 import org.hibernate.engine.spi.EntityKey;
 import org.hibernate.engine.spi.PersistenceContext;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
@@ -109,45 +110,46 @@ public class Attacher
 		ClassMetadata metadata = sessionImpl.getFactory().getClassMetadata(def.getOwner().getClass());
 		Serializable identifier = metadata.getIdentifier(def.getOwner(), sessionImpl);
 
-		PersistentCollection collection = def.getCollectionType().createCollection(sessionImpl);
-		collection.setOwner(def.getOwner());
-		collection.setSnapshot(identifier, def.getRole(), null); // Sort of 'fake' state...
-
-		persistenceContext.addUninitializedCollection(persister, collection, identifier);
-
-		// Possibly re-attach owner
-		EntityKey key = new EntityKey(identifier, getOwnPersister(def.getOwner(), sessionImpl),
-			sessionImpl.getTenantIdentifier());
-		if (!persistenceContext.containsEntity(key))
+		PersistentCollection collection = persistenceContext.getCollection(new CollectionKey(persister, identifier));
+		if (collection == null)
 		{
-			EntityPersister ownPersister = getOwnPersister(def.getOwner(), sessionImpl);
+			collection = def.getCollectionType().createCollection(sessionImpl);
+			collection.setOwner(def.getOwner());
+			collection.setSnapshot(identifier, def.getRole(), null); // Sort of 'fake' state...
 
-			Object[] values = ownPersister.getPropertyValues(def.getOwner());
-			TypeHelper.deepCopy(
-				values,
-				ownPersister.getPropertyTypes(),
-				ownPersister.getPropertyUpdateability(),
-				values,
-				sessionImpl
-				);
-			Object version = Versioning.getVersion(values, ownPersister);
+			persistenceContext.addUninitializedCollection(persister, collection, identifier);
 
-			persistenceContext.addEntity(
-				def.getOwner(),
-				(ownPersister.isMutable() ? Status.MANAGED : Status.READ_ONLY),
-				values,
-				key,
-				version,
-				LockMode.NONE,
-				true,
-				ownPersister,
-				false,
-				true // will be ignored, using the existing Entry instead
-				);
+			// Possibly re-attach owner
+			EntityKey key = new EntityKey(identifier, getOwnPersister(def.getOwner(), sessionImpl),
+				sessionImpl.getTenantIdentifier());
+			if (!persistenceContext.containsEntity(key))
+			{
+				EntityPersister ownPersister = getOwnPersister(def.getOwner(), sessionImpl);
+
+				Object[] values = ownPersister.getPropertyValues(def.getOwner());
+				TypeHelper.deepCopy(
+					values,
+					ownPersister.getPropertyTypes(),
+					ownPersister.getPropertyUpdateability(),
+					values,
+					sessionImpl
+					);
+				Object version = Versioning.getVersion(values, ownPersister);
+
+				persistenceContext.addEntity(
+					def.getOwner(),
+					(ownPersister.isMutable() ? Status.MANAGED : Status.READ_ONLY),
+					values,
+					key,
+					version,
+					LockMode.NONE,
+					true,
+					ownPersister,
+					false,
+					true // will be ignored, using the existing Entry instead
+					);
+			}
 		}
-
-		// Remove proxy from the Hibernate context
-		persistenceContext.getCollectionEntries().remove(proxy);
 
 		// Return value
 		return collection;
