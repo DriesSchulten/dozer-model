@@ -251,8 +251,6 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 		model.detach();
 		model = serialize(model);
 
-		getSession().clear();
-
 		// Trigger attach
 		model.getObject();
 
