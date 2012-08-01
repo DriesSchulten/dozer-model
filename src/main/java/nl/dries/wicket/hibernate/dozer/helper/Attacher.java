@@ -102,13 +102,15 @@ public class Attacher
 		ClassMetadata metadata = sessionImpl.getFactory().getClassMetadata(def.getOwner().getClass());
 		Serializable identifier = metadata.getIdentifier(def.getOwner(), sessionImpl);
 
-		PersistentCollection collection = persistenceContext.getCollection(new CollectionKey(persister, identifier));
+		CollectionKey key = new CollectionKey(persister, identifier);
+		PersistentCollection collection = persistenceContext.getCollection(key);
 		if (collection == null)
 		{
 			collection = def.getCollectionType().createCollection(sessionImpl);
 			collection.setSnapshot(identifier, def.getRole(), null); // Sort of 'fake' state...
 
 			persistenceContext.addUninitializedDetachedCollection(persister, collection);
+			persistenceContext.addUnownedCollection(key, collection);
 		}
 
 		// Return value
