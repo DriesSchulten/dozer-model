@@ -122,7 +122,7 @@ public class ProxyBuilder
 
 			if ("writeReplace".equals(method.getName()))
 			{
-				return new ProxyReplacement(propertyDefinition);
+				return self;
 			}
 			else if ("finalize".equals(method.getName()))
 			{
@@ -141,39 +141,6 @@ public class ProxyBuilder
 
 			// Invoke the requested method on the real value
 			return method.invoke(realValue, args);
-		}
-	}
-
-	/**
-	 * Holder while serializing the proxy
-	 * 
-	 * @author dries
-	 */
-	private static class ProxyReplacement implements Serializable
-	{
-		/** Default */
-		private static final long serialVersionUID = 1L;
-
-		/** */
-		private final AbstractPropertyDefinition propertyDefinition;
-
-		/**
-		 * Construct
-		 * 
-		 * @param propertyDefinition
-		 */
-		public ProxyReplacement(AbstractPropertyDefinition propertyDefinition)
-		{
-			this.propertyDefinition = propertyDefinition;
-		}
-
-		/**
-		 * @return newly created proxy
-		 * @throws ObjectStreamException
-		 */
-		private Object readResolve() throws ObjectStreamException
-		{
-			return buildProxy(propertyDefinition);
 		}
 	}
 
