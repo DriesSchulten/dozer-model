@@ -19,7 +19,6 @@ import nl.dries.wicket.hibernate.dozer.proxy.ProxyBuilder;
 import nl.dries.wicket.hibernate.dozer.proxy.ProxyBuilder.Proxied;
 
 import org.hibernate.Hibernate;
-import org.hibernate.collection.internal.PersistentBag;
 import org.hibernate.collection.internal.PersistentMap;
 import org.hibernate.collection.internal.PersistentSet;
 import org.hibernate.collection.spi.PersistentCollection;
@@ -124,26 +123,22 @@ public class HibernateObjectVisitor implements VisitorStrategy
 	/**
 	 * Convert Hibernate collection to a plain collection type
 	 * 
-	 * @param object
-	 *            the object that owns the property
-	 * @param propertyName
-	 *            the property
-	 * @param value
-	 *            input collection
+	 * @param object the object that owns the property
+	 * @param propertyName the property
+	 * @param value input collection
 	 * @return plain collection type
 	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private Object convertToPlainCollection(Object object, String propertyName, Object value)
 	{
 		PersistentCollection collection = (PersistentCollection) value;
-		Object plainCollection = HibernateCollectionType.determineType(collection).createPlainCollection(
-			collection);
+		Object plainCollection = HibernateCollectionType.determineType(collection).createPlainCollection(collection);
 
 		// Deproxy all the elements in the collection
 		if (plainCollection instanceof List<?>)
 		{
 			List list = (List) plainCollection;
-			for (Iterator<?> iter = ((PersistentBag) collection).iterator(); iter.hasNext();)
+			for (Iterator<?> iter = ((List) collection).iterator(); iter.hasNext();)
 			{
 				Object next = iter.next();
 				list.add(ObjectHelper.deproxy(next));
@@ -175,14 +170,10 @@ public class HibernateObjectVisitor implements VisitorStrategy
 	/**
 	 * Creates a mapping for a Hibernate proxy
 	 * 
-	 * @param object
-	 *            the owning object
-	 * @param identifier
-	 *            it's identifier
-	 * @param propertyName
-	 *            the name of the property
-	 * @param value
-	 *            its current value
+	 * @param object the owning object
+	 * @param identifier it's identifier
+	 * @param propertyName the name of the property
+	 * @param value its current value
 	 */
 	@SuppressWarnings("unchecked")
 	private void handleProxy(Object object, Serializable identifier, String propertyName, Object value)
