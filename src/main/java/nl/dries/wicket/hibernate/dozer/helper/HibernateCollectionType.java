@@ -11,6 +11,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import org.hibernate.collection.internal.PersistentBag;
+import org.hibernate.collection.internal.PersistentList;
 import org.hibernate.collection.internal.PersistentMap;
 import org.hibernate.collection.internal.PersistentSet;
 import org.hibernate.collection.internal.PersistentSortedSet;
@@ -27,7 +28,9 @@ import org.slf4j.LoggerFactory;
 public enum HibernateCollectionType
 {
 	/** */
-	LIST(PersistentBag.class, ArrayList.class, List.class),
+	BAG(PersistentBag.class, ArrayList.class, List.class),
+	/** */
+	LIST(PersistentList.class, ArrayList.class, List.class),
 	/** */
 	SET(PersistentSet.class, HashSet.class, Set.class),
 	/** */
@@ -72,8 +75,7 @@ public enum HibernateCollectionType
 	/**
 	 * Creates a instance of the {@link PersistentCollection} defined by this type
 	 * 
-	 * @param sessionImpl
-	 *            {@link SessionImplementor}
+	 * @param sessionImpl {@link SessionImplementor}
 	 * @return {@link PersistentCollection} instance
 	 */
 	public PersistentCollection createCollection(SessionImplementor sessionImpl)
@@ -90,8 +92,7 @@ public enum HibernateCollectionType
 		{
 			LOG.error("Persistent collection type {} has no SessionImplementor constructor", hibernateCollectionClass);
 		}
-		catch (InstantiationException | IllegalAccessException | IllegalArgumentException
-			| InvocationTargetException e)
+		catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e)
 		{
 			LOG.error("Cannot create collection instance of type " + hibernateCollectionClass, e);
 		}
@@ -102,8 +103,7 @@ public enum HibernateCollectionType
 	/**
 	 * Creates a plain Java collection instance based on a {@link PersistentCollection} one
 	 * 
-	 * @param persistentCollection
-	 *            the {@link PersistentCollection}
+	 * @param persistentCollection the {@link PersistentCollection}
 	 * @return plain collection
 	 */
 	public Object createPlainCollection(PersistentCollection persistentCollection)
@@ -135,8 +135,7 @@ public enum HibernateCollectionType
 	/**
 	 * Determine collection type based on input value
 	 * 
-	 * @param sourceFieldValue
-	 *            the input {@link PersistentCollection}
+	 * @param sourceFieldValue the input {@link PersistentCollection}
 	 * @return {@link HibernateCollectionType}
 	 */
 	public static HibernateCollectionType determineType(PersistentCollection sourceFieldValue)
@@ -152,6 +151,10 @@ public enum HibernateCollectionType
 			type = HibernateCollectionType.SET;
 		}
 		else if (sourceFieldValue.getValue() instanceof PersistentBag)
+		{
+			type = HibernateCollectionType.BAG;
+		}
+		else if (sourceFieldValue.getValue() instanceof PersistentList)
 		{
 			type = HibernateCollectionType.LIST;
 		}
