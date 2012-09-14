@@ -123,9 +123,12 @@ public class HibernateObjectVisitor implements VisitorStrategy
 	/**
 	 * Convert Hibernate collection to a plain collection type
 	 * 
-	 * @param object the object that owns the property
-	 * @param propertyName the property
-	 * @param value input collection
+	 * @param object
+	 *            the object that owns the property
+	 * @param propertyName
+	 *            the property
+	 * @param value
+	 *            input collection
 	 * @return plain collection type
 	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
@@ -170,10 +173,14 @@ public class HibernateObjectVisitor implements VisitorStrategy
 	/**
 	 * Creates a mapping for a Hibernate proxy
 	 * 
-	 * @param object the owning object
-	 * @param identifier it's identifier
-	 * @param propertyName the name of the property
-	 * @param value its current value
+	 * @param object
+	 *            the owning object
+	 * @param identifier
+	 *            it's identifier
+	 * @param propertyName
+	 *            the name of the property
+	 * @param value
+	 *            its current value
 	 */
 	@SuppressWarnings("unchecked")
 	private void handleProxy(Object object, Serializable identifier, String propertyName, Object value)

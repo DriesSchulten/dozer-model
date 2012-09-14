@@ -75,7 +75,8 @@ public enum HibernateCollectionType
 	/**
 	 * Creates a instance of the {@link PersistentCollection} defined by this type
 	 * 
-	 * @param sessionImpl {@link SessionImplementor}
+	 * @param sessionImpl
+	 *            {@link SessionImplementor}
 	 * @return {@link PersistentCollection} instance
 	 */
 	public PersistentCollection createCollection(SessionImplementor sessionImpl)
@@ -103,7 +104,8 @@ public enum HibernateCollectionType
 	/**
 	 * Creates a plain Java collection instance based on a {@link PersistentCollection} one
 	 * 
-	 * @param persistentCollection the {@link PersistentCollection}
+	 * @param persistentCollection
+	 *            the {@link PersistentCollection}
 	 * @return plain collection
 	 */
 	public Object createPlainCollection(PersistentCollection persistentCollection)
@@ -135,7 +137,8 @@ public enum HibernateCollectionType
 	/**
 	 * Determine collection type based on input value
 	 * 
-	 * @param sourceFieldValue the input {@link PersistentCollection}
+	 * @param sourceFieldValue
+	 *            the input {@link PersistentCollection}
 	 * @return {@link HibernateCollectionType}
 	 */
 	public static HibernateCollectionType determineType(PersistentCollection sourceFieldValue)
