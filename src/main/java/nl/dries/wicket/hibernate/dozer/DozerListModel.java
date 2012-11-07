@@ -1,6 +1,7 @@
 package nl.dries.wicket.hibernate.dozer;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.wicket.model.IModel;
@@ -88,7 +89,7 @@ public class DozerListModel<T> implements IModel<List<T>>
 			{
 				objects.add(model.getObject());
 			}
-			return objects;
+			return Collections.unmodifiableList(objects);
 		}
 		return null;
 	}
