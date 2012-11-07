@@ -376,12 +376,26 @@ public class DozerModelTest extends AbstractWicketHibernateTest
 
 		assertEquals(list, model.getObject());
 
-		list = new ArrayList<>();
-		model.setObject(list);
+		List<Person> emptyList = new ArrayList<>();
+		model.setObject(emptyList);
 		model.detach();
 		model = serialize(model);
 
-		assertEquals(list, model.getObject());
+		assertEquals(emptyList, model.getObject());
+
+		model.setObject(list);
+
+		assertTrue(model.contains(p2));
+		assertEquals(2, model.size());
+		assertFalse(model.isEmpty());
+
+		model.add(new Person());
+		assertEquals(3, model.size());
+
+		assertTrue(model.remove(p2));
+
+		model.clear();
+		assertTrue(model.isEmpty());
 	}
 
 	/**

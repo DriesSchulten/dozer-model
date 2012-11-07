@@ -49,7 +49,7 @@ public class DozerListModel<T> implements IModel<List<T>>
 	 */
 	private void innerSet(List<T> objects)
 	{
-		models = null;
+		models = new ArrayList<>();
 
 		if (objects != null)
 		{
@@ -67,31 +67,26 @@ public class DozerListModel<T> implements IModel<List<T>>
 	@Override
 	public void detach()
 	{
-		if (models != null)
+		for (DozerModel<T> model : models)
 		{
-			for (DozerModel<T> model : models)
-			{
-				model.detach();
-			}
+			model.detach();
 		}
 	}
 
 	/**
+	 * Returns a read-only list
+	 * 
 	 * @see org.apache.wicket.model.IModel#getObject()
 	 */
 	@Override
 	public List<T> getObject()
 	{
-		if (models != null)
+		List<T> objects = new ArrayList<>(models.size());
+		for (DozerModel<T> model : models)
 		{
-			List<T> objects = new ArrayList<>(models.size());
-			for (DozerModel<T> model : models)
-			{
-				objects.add(model.getObject());
-			}
-			return Collections.unmodifiableList(objects);
+			objects.add(model.getObject());
 		}
-		return null;
+		return Collections.unmodifiableList(objects);
 	}
 
 	/**
@@ -101,5 +96,77 @@ public class DozerListModel<T> implements IModel<List<T>>
 	public void setObject(List<T> object)
 	{
 		innerSet(object);
+	}
+
+	/**
+	 * @see java.util.List#add(Object)
+	 */
+	public boolean add(T object)
+	{
+		addModel(new DozerModel<>(object));
+		return true;
+	}
+
+	/**
+	 * Add a model to the interal list
+	 * 
+	 * @param model
+	 *            the model to add
+	 */
+	public void addModel(DozerModel<T> model)
+	{
+		models.add(model);
+	}
+
+	/**
+	 * @see java.util.List#remove(Object))
+	 */
+	public boolean remove(T object)
+	{
+		return removeModel(new DozerModel<>(object));
+	}
+
+	/**
+	 * Removes a model from the internal list
+	 * 
+	 * @param model
+	 *            the model to remove
+	 * @return <code>true</code> if removed
+	 */
+	public boolean removeModel(DozerModel<T> model)
+	{
+		return models.remove(model);
+	}
+
+	/**
+	 * @see java.util.List#size()
+	 */
+	public int size()
+	{
+		return models.size();
+	}
+
+	/**
+	 * @see java.util.List#isEmpty()
+	 */
+	public boolean isEmpty()
+	{
+		return models.isEmpty();
+	}
+
+	/**
+	 * @see java.util.List#contains(java.lang.Object)
+	 */
+	public boolean contains(Object o)
+	{
+		return models.contains(new DozerModel<>(o));
+	}
+
+	/**
+	 * @see java.util.List#clear()
+	 */
+	public void clear()
+	{
+		this.models = new ArrayList<>();
 	}
 }
