@@ -3,9 +3,6 @@ package nl.dries.wicket.hibernate.dozer;
 import java.io.Serializable;
 import java.util.List;
 
-import org.apache.wicket.mock.MockApplication;
-import org.apache.wicket.spring.injection.annot.SpringComponentInjector;
-import org.apache.wicket.spring.test.ApplicationContextMock;
 import org.apache.wicket.util.tester.WicketTester;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -40,6 +37,8 @@ public abstract class AbstractWicketHibernateTest
 		if (sessionFactory == null)
 		{
 			sessionFactory = HibernateHelper.buildSessionFactory(getEntities());
+
+			SessionFinderHolder.setSessionFinder(new MockSessionFinder(sessionFactory));
 		}
 
 		if (!TransactionSynchronizationManager.hasResource(sessionFactory))
@@ -50,14 +49,7 @@ public abstract class AbstractWicketHibernateTest
 
 		if (wicketTester == null)
 		{
-			ApplicationContextMock context = new ApplicationContextMock();
-			context.putBean(new MockSessionFinder(sessionFactory));
-
-			MockApplication application = new MockApplication();
-			new SpringComponentInjector(application, context);
-			wicketTester = new WicketTester(application);
-
-			// wicketTester.getRequestCycle().setMetaData(DozerRequestCycleListener.ENDING_REQUEST, true);
+			wicketTester = new WicketTester();
 		}
 	}
 

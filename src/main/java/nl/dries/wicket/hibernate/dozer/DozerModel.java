@@ -10,10 +10,8 @@ import nl.dries.wicket.hibernate.dozer.helper.ObjectHelper;
 import nl.dries.wicket.hibernate.dozer.properties.AbstractPropertyDefinition;
 import nl.dries.wicket.hibernate.dozer.visitor.ObjectVisitor;
 
-import org.apache.wicket.injection.Injector;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.request.cycle.RequestCycle;
-import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.hibernate.proxy.HibernateProxy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,10 +47,6 @@ public class DozerModel<T> implements IModel<T>, ModelCallback
 	/** Detached object instance */
 	private T detachedObject;
 
-	/** */
-	@SpringBean
-	private SessionFinder sessionFinder;
-
 	/**
 	 * Construct
 	 * 
@@ -75,7 +69,7 @@ public class DozerModel<T> implements IModel<T>, ModelCallback
 	{
 		this();
 
-		this.object = (T) sessionFinder.getHibernateSession(objectClass).load(objectClass, id);
+		this.object = (T) SessionFinderHolder.getSessionFinder().getHibernateSession(objectClass).load(objectClass, id);
 	}
 
 	/**
@@ -83,7 +77,6 @@ public class DozerModel<T> implements IModel<T>, ModelCallback
 	 */
 	public DozerModel()
 	{
-		Injector.get().inject(this);
 	}
 
 	/**
@@ -149,7 +142,7 @@ public class DozerModel<T> implements IModel<T>, ModelCallback
 				object = (T) proxy.getHibernateLazyInitializer().getImplementation();
 			}
 
-			ObjectVisitor<T> walker = new ObjectVisitor<>(object, sessionFinder, this);
+			ObjectVisitor<T> walker = new ObjectVisitor<>(object, getSessionFinder(), this);
 			detachedObject = walker.walk();
 
 			object = null;
@@ -162,7 +155,7 @@ public class DozerModel<T> implements IModel<T>, ModelCallback
 	@Override
 	public SessionFinder getSessionFinder()
 	{
-		return sessionFinder;
+		return SessionFinderHolder.getSessionFinder();
 	}
 
 	/**
