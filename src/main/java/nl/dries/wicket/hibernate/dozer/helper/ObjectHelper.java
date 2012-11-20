@@ -6,7 +6,6 @@ import org.hibernate.proxy.HibernateProxy;
 import org.hibernate.proxy.LazyInitializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.util.ReflectionUtils;
 
 /**
  * Reflection/proxy helper functions
@@ -37,10 +36,10 @@ public final class ObjectHelper
 		Object value = null;
 		try
 		{
-			Field field = ReflectionUtils.findField(object.getClass(), property);
+			Field field = findField(object.getClass(), property);
 			if (field != null)
 			{
-				ReflectionUtils.makeAccessible(field);
+				field.setAccessible(true);
 				value = field.get(object);
 			}
 			else
@@ -70,10 +69,10 @@ public final class ObjectHelper
 	{
 		try
 		{
-			Field field = ReflectionUtils.findField(object.getClass(), property);
+			Field field = findField(object.getClass(), property);
 			if (field != null)
 			{
-				ReflectionUtils.makeAccessible(field);
+				field.setAccessible(true);
 				field.set(object, value);
 			}
 			else
@@ -106,5 +105,35 @@ public final class ObjectHelper
 			return (U) lazyInitializer.getImplementation();
 		}
 		return object;
+	}
+
+	/**
+	 * Find a {@link Field} with a given name in a object hierarchy
+	 * 
+	 * @param objectClass
+	 *            the object class to start searching (searches travels up the inheritance tree until the field is
+	 *            found)
+	 * @param property
+	 *            the property to search for
+	 * @return the found {@link Field} or <code>null</code> if not existent
+	 */
+	private static Field findField(Class<?> objectClass, String property)
+	{
+		Field foundField = null;
+
+		while (!Object.class.equals(objectClass) && foundField == null)
+		{
+			for (Field field : objectClass.getDeclaredFields())
+			{
+				if (property.equals(field.getName()))
+				{
+					foundField = field;
+				}
+			}
+
+			objectClass = objectClass.getSuperclass();
+		}
+
+		return foundField;
 	}
 }
