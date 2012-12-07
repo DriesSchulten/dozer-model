@@ -13,8 +13,8 @@ import nl.dries.wicket.hibernate.dozer.helper.ModelCallback;
 import nl.dries.wicket.hibernate.dozer.helper.ObjectHelper;
 import nl.dries.wicket.hibernate.dozer.properties.AbstractPropertyDefinition;
 import nl.dries.wicket.hibernate.dozer.properties.SimplePropertyDefinition;
+import nl.dries.wicket.hibernate.dozer.proxy.Proxied;
 import nl.dries.wicket.hibernate.dozer.proxy.ProxyBuilder;
-import nl.dries.wicket.hibernate.dozer.proxy.ProxyBuilder.Proxied;
 
 import org.hibernate.Hibernate;
 import org.hibernate.internal.SessionImpl;
@@ -23,7 +23,6 @@ import org.hibernate.proxy.HibernateProxy;
 import org.hibernate.proxy.LazyInitializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.util.ReflectionUtils;
 
 /**
  * Visiting strategy for a plain object
@@ -70,7 +69,7 @@ public class BasicObjectVisitor implements VisitorStrategy
 			Class<?> type = field.getType();
 			if (isValidType(type))
 			{
-				ReflectionUtils.makeAccessible(field);
+				field.setAccessible(true);
 
 				Object value = getValue(field, object);
 				if (value != null)

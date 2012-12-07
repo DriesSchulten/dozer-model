@@ -122,11 +122,11 @@ public enum HibernateCollectionType
 				collection = plainTypeClass.newInstance();
 			}
 		}
-		catch (SecurityException e)
+		catch (IllegalArgumentException e)
 		{
 			LOG.error("Colection type {} has no empty constructor", plainTypeClass);
 		}
-		catch (InstantiationException | IllegalAccessException | IllegalArgumentException e)
+		catch (InstantiationException | IllegalAccessException | SecurityException e)
 		{
 			LOG.error("Cannot create collection instance of type " + plainTypeClass, e);
 		}
@@ -143,7 +143,7 @@ public enum HibernateCollectionType
 	 */
 	public static HibernateCollectionType determineType(PersistentCollection sourceFieldValue)
 	{
-		final HibernateCollectionType type;
+		HibernateCollectionType type = null;
 
 		if (sourceFieldValue.getValue() instanceof PersistentSortedSet)
 		{
@@ -161,7 +161,7 @@ public enum HibernateCollectionType
 		{
 			type = HibernateCollectionType.LIST;
 		}
-		else
+		else if (sourceFieldValue.getValue() instanceof PersistentMap)
 		{
 			type = HibernateCollectionType.MAP;
 		}

@@ -5,7 +5,9 @@ import org.apache.wicket.request.cycle.AbstractRequestCycleListener;
 import org.apache.wicket.request.cycle.RequestCycle;
 
 /**
- * Dozer request cycle listener, records when a request is ending, but before everything is detached.
+ * Dozer request cycle listener, records when a request is ending, but before everything is detached. We are using this
+ * to record when we end a request because Wicket also calls <code>onDetatch</code> while replacing components and we
+ * only want to detach when the request is over.
  * 
  * @author dries
  */

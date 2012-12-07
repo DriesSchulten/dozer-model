@@ -1,6 +1,5 @@
 package nl.dries.wicket.hibernate.dozer.proxy;
 
-import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -16,7 +15,6 @@ import nl.dries.wicket.hibernate.dozer.properties.AbstractPropertyDefinition;
 import nl.dries.wicket.hibernate.dozer.properties.CollectionPropertyDefinition;
 import nl.dries.wicket.hibernate.dozer.properties.SimplePropertyDefinition;
 
-import org.hibernate.HibernateException;
 import org.hibernate.collection.spi.PersistentCollection;
 import org.hibernate.engine.spi.SessionImplementor;
 import org.hibernate.proxy.HibernateProxy;
@@ -78,12 +76,12 @@ public class ProxyBuilder
 		try
 		{
 			proxy = proxyClass.newInstance();
+			((ProxyObject) proxy).setHandler(new LoaderCallback(property));
 		}
 		catch (InstantiationException | IllegalAccessException e)
 		{
 			LOG.error("Error creating Javassist proxy", e);
 		}
-		((ProxyObject) proxy).setHandler(new LoaderCallback(property));
 
 		return proxy;
 	}
@@ -171,7 +169,7 @@ public class ProxyBuilder
 		 * @see org.hibernate.proxy.LazyInitializer#initialize()
 		 */
 		@Override
-		public void initialize() throws HibernateException
+		public void initialize()
 		{
 		}
 
@@ -246,7 +244,7 @@ public class ProxyBuilder
 		 * @see org.hibernate.proxy.LazyInitializer#getImplementation(org.hibernate.engine.spi.SessionImplementor)
 		 */
 		@Override
-		public Object getImplementation(SessionImplementor session) throws HibernateException
+		public Object getImplementation(SessionImplementor session)
 		{
 			return getImplementation();
 		}
@@ -301,7 +299,7 @@ public class ProxyBuilder
 		 * @see org.hibernate.proxy.LazyInitializer#setSession(org.hibernate.engine.spi.SessionImplementor)
 		 */
 		@Override
-		public void setSession(SessionImplementor session) throws HibernateException
+		public void setSession(SessionImplementor session)
 		{
 			// Not used
 		}
@@ -333,19 +331,5 @@ public class ProxyBuilder
 			return false;
 		}
 
-	}
-
-	/**
-	 * Tag interface
-	 * 
-	 * @author dries
-	 */
-	public static interface Proxied
-	{
-		/**
-		 * @return object that will replace this object in serialized state
-		 * @throws ObjectStreamException
-		 */
-		Object writeReplace() throws ObjectStreamException;
 	}
 }

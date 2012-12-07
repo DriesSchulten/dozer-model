@@ -17,13 +17,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Dozer Wicket Hibernate model. This model wil act as a detachable model. When detaching all initalized objects in the
- * object graph are cloned/copied using Dozer. This way all Hibernate information (initializer containing session state)
- * is discarded, so when reattaching the object we won't get Lazy/session closed exceptions.<br>
- * <br>
- * All un-initalized proxies in the object graph are saved to lightweight pointers (not containing Hibernate state).
- * When the object is re-attached these pointers will be restored as 'normal' Hibernate proxies that will get
- * initialized on access.
+ * Dozer Wicket Hibernate model. This model wil act as a detachable model. When detaching all un-initalized proxies in
+ * the object graph are replaced with lightweight proxies (not containing Hibernate state). When the object is
+ * re-attached these proxies will be restored as 'normal' Hibernate proxies that will get initialized on access.
  * 
  * @author dries
  * 

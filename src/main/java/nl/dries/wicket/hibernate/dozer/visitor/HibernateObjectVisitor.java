@@ -15,8 +15,8 @@ import nl.dries.wicket.hibernate.dozer.helper.ObjectHelper;
 import nl.dries.wicket.hibernate.dozer.properties.AbstractPropertyDefinition;
 import nl.dries.wicket.hibernate.dozer.properties.CollectionPropertyDefinition;
 import nl.dries.wicket.hibernate.dozer.properties.SimplePropertyDefinition;
+import nl.dries.wicket.hibernate.dozer.proxy.Proxied;
 import nl.dries.wicket.hibernate.dozer.proxy.ProxyBuilder;
-import nl.dries.wicket.hibernate.dozer.proxy.ProxyBuilder.Proxied;
 
 import org.hibernate.Hibernate;
 import org.hibernate.collection.internal.PersistentMap;
@@ -88,7 +88,7 @@ public class HibernateObjectVisitor implements VisitorStrategy
 
 					if (!Hibernate.isInitialized(value))
 					{
-						handleProxy(object, identifier, propertyName, value);
+						handleProxy(object, propertyName, value);
 
 						LOG.debug("Detaching proxy [#{} {}.{}]", logVals);
 					}
@@ -175,15 +175,13 @@ public class HibernateObjectVisitor implements VisitorStrategy
 	 * 
 	 * @param object
 	 *            the owning object
-	 * @param identifier
-	 *            it's identifier
 	 * @param propertyName
 	 *            the name of the property
 	 * @param value
 	 *            its current value
 	 */
 	@SuppressWarnings("unchecked")
-	private void handleProxy(Object object, Serializable identifier, String propertyName, Object value)
+	private void handleProxy(Object object, String propertyName, Object value)
 	{
 		final AbstractPropertyDefinition def;
 
