@@ -77,7 +77,7 @@ public class Attacher
 			}
 			else
 			{
-				instance = existing;
+				instance = persistenceContext.narrowProxy(existing, persister, key, null);
 			}
 		}
 
