@@ -4,7 +4,7 @@
 
 	<groupId>nl.dries.wicket.hibernate</groupId>
 	<artifactId>dozer-hibernate-model</artifactId>
-	<version>0.3.0-SNAPSHOT</version>
+	<version>0.3.0</version>
 	<packaging>jar</packaging>
 
 	<name>Wicket dozer Hibernate model</name>
