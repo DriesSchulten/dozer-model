@@ -12,6 +12,8 @@ import nl.dries.wicket.hibernate.dozer.helper.Seen;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.engine.spi.SessionImplementor;
 import org.hibernate.proxy.HibernateProxyHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Walker to traverse an object graph, and remove Hibernate state
@@ -20,6 +22,9 @@ import org.hibernate.proxy.HibernateProxyHelper;
  */
 public class ObjectVisitor<T>
 {
+	/** Logger */
+	private static final Logger LOG = LoggerFactory.getLogger(ObjectVisitor.class);
+
 	/** Root */
 	private final T root;
 
@@ -67,6 +72,13 @@ public class ObjectVisitor<T>
 		Class<?> objectClass = HibernateProxyHelper.getClassWithoutInitializingProxy(current);
 
 		SessionImplementor sessionImpl = (SessionImplementor) sessionFinder.getHibernateSession(objectClass);
+
+		if (sessionImpl == null)
+		{
+			LOG.debug("No session, stop detaching");
+			return;
+		}
+
 		SessionFactoryImplementor factory = sessionImpl.getFactory();
 
 		final VisitorStrategy strategy;
