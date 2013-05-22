@@ -23,8 +23,7 @@
 		<repository>
 			<id>deployment.external</id>
 			<name>external Release Repository</name>
-			<url>
-			</url>
+			<url>http://vaatwasser:8081/nexus/content/repositories/external-releases/</url>
 			<uniqueVersion>false</uniqueVersion>
 		</repository>
 		<snapshotRepository>
