@@ -1,6 +1,7 @@
 package nl.dries.wicket.hibernate.dozer.visitor;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -68,7 +69,7 @@ public class BasicObjectVisitor implements VisitorStrategy
 		for (Field field : getAllFields(object.getClass()))
 		{
 			Class<?> type = field.getType();
-			if (isValidType(type))
+			if (isValidField(field))
 			{
 				field.setAccessible(true);
 
@@ -121,19 +122,20 @@ public class BasicObjectVisitor implements VisitorStrategy
 	}
 
 	/**
-	 * Checks if the given type is valid to visit
+	 * Checks if the given field is valid to visit
 	 * 
-	 * @param type
-	 *            the type to check
-	 * @return <code>true</code> if the type is valid
+	 * @param field
+	 *            the field to check
+	 * @return <code>true</code> if the field is valid
 	 */
-	private boolean isValidType(Class<?> type)
+	private boolean isValidField(Field field)
 	{
-		boolean valid = type != null && type.getPackage() != null && !type.isPrimitive();
-
+		boolean valid = field != null && field.getType().getPackage() != null && !field.getType().isPrimitive();
+		
 		if (valid)
 		{
-			valid = !type.getPackage().getName().startsWith(JAVA_PKG);
+			int modifiers = field.getModifiers();
+			valid = !Modifier.isStatic(modifiers) && !Modifier.isTransient(modifiers);
 		}
 
 		return valid;
