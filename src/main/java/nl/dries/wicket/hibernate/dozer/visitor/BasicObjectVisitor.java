@@ -20,6 +20,7 @@ import org.hibernate.Hibernate;
 import org.hibernate.internal.SessionImpl;
 import org.hibernate.metadata.ClassMetadata;
 import org.hibernate.proxy.HibernateProxy;
+import org.hibernate.proxy.HibernateProxyHelper;
 import org.hibernate.proxy.LazyInitializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,8 +75,10 @@ public class BasicObjectVisitor implements VisitorStrategy
 				Object value = getValue(field, object);
 				if (value != null)
 				{
-					SessionImpl sessionImpl = (SessionImpl) sessionFinder.getHibernateSession(type);
-					ClassMetadata metadata = sessionImpl.getFactory().getClassMetadata(type);
+					Class<?> implType = HibernateProxyHelper.getClassWithoutInitializingProxy(value);
+					
+					SessionImpl sessionImpl = (SessionImpl) sessionFinder.getHibernateSession(implType);
+					ClassMetadata metadata = sessionImpl.getFactory().getClassMetadata(implType);
 					if (metadata == null)
 					{
 						toWalk.add(value);
