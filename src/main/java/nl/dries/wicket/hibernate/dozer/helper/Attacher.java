@@ -35,8 +35,6 @@ public class Attacher
 	 * 
 	 * @param def
 	 *            the {@link AbstractPropertyDefinition}
-	 * @param proxy
-	 *            the current, proxied, value
 	 */
 	public Attacher(AbstractPropertyDefinition def)
 	{
@@ -59,7 +57,7 @@ public class Attacher
 		EntityPersister persister = getPersister(def.getHibernateProperty(), sessionImpl);
 		PersistenceContext persistenceContext = sessionImpl.getPersistenceContext();
 
-		EntityKey key = new EntityKey(def.getHibernateProperty().getId(), persister, sessionImpl.getTenantIdentifier());
+		EntityKey key = new EntityKey(def.getHibernateProperty().getId(), persister);
 
 		// Check existing instance
 		Object instance = persistenceContext.getEntity(key);
