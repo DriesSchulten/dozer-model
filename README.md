@@ -15,8 +15,8 @@ In the `onDetach` of the model the object tree is traversed, when a Hibernate pr
 ### Prerequisites
 
 * Java 7
-* Wicket 1.5.x
-* Hibernate 4.1.x (only 4.1.x supported since it uses internal Hibernate API's for re-attaching, for 3.6.x see other branch)
+* Wicket 6.x.x
+* Hibernate 4.2.x (only 4.2.x supported since it uses internal Hibernate API's for re-attaching, for 4.1.x see version 0.3.2)
 
 ### Creation:
 
