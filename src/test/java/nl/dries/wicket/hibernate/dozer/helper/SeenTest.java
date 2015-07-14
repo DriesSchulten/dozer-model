@@ -38,7 +38,7 @@ public class SeenTest
 		Seen seen = new Seen();
 		seen.add(pet1);
 
-		Assert.assertTrue(seen.contains(pet2));
+		Assert.assertFalse(seen.contains(pet2));
 	}
 
 	/**

@@ -36,13 +36,13 @@
 	
 	<scm>
 		<connection>
-			scm:git:git://github.com/DriesSchulten/dozer-model.git
+			scm:git:git@github.com/DriesSchulten/dozer-model.git
 		</connection>
 		<developerConnection>
-			scm:git:ssh://git@github.com/DriesSchulten/dozer-model.git
+			scm:git:git@github.com/DriesSchulten/dozer-model.git
 		</developerConnection>
 		<url>
-			https://github.com/DriesSchulten/dozer-model.git
+			scm:git:git@github.com/DriesSchulten/dozer-model.git
 		</url>
 	</scm>
 
