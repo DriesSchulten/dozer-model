@@ -11,7 +11,7 @@ import java.util.Map;
 public class Seen
 {
 	/** */
-	Map<Object, Void> seen = new IdentityHashMap<>();
+	private final Map<Object, Void> seen = new IdentityHashMap<>();
 
 	/**
 	 * @param obj
