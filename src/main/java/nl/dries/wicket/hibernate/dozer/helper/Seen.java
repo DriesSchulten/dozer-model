@@ -40,16 +40,13 @@ public class Seen
 	 */
 	public boolean contains(Object obj)
 	{
-		boolean contains = false;
-
 		for (Object seenObj : seen)
 		{
-			if (!contains)
+			if (seenObj == obj)
 			{
-				contains = seenObj == obj;
+				return true;
 			}
 		}
-
-		return contains;
+		return false;
 	}
 }
