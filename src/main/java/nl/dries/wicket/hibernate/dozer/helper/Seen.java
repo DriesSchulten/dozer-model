@@ -1,7 +1,7 @@
 package nl.dries.wicket.hibernate.dozer.helper;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.IdentityHashMap;
+import java.util.Map;
 
 /**
  * Seen objects holder
@@ -11,7 +11,7 @@ import java.util.List;
 public class Seen
 {
 	/** */
-	List<Object> seen = new ArrayList<>();
+	Map<Object, Void> seen = new IdentityHashMap<>();
 
 	/**
 	 * @param obj
@@ -19,16 +19,10 @@ public class Seen
 	 */
 	public void add(Object obj)
 	{
-		seen.add(obj);
-	}
-
-	/**
-	 * @param obj
-	 *            the object to remove
-	 */
-	public void remove(Object obj)
-	{
-		seen.remove(obj);
+		if (!seen.containsKey(obj))
+		{
+			seen.put(obj, null);
+		}
 	}
 
 	/**
@@ -40,13 +34,6 @@ public class Seen
 	 */
 	public boolean contains(Object obj)
 	{
-		for (Object seenObj : seen)
-		{
-			if (seenObj == obj)
-			{
-				return true;
-			}
-		}
-		return false;
+		return seen.containsKey(obj);
 	}
 }
