@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.TreeSet;
 
 import org.hibernate.collection.internal.PersistentBag;
@@ -34,7 +35,7 @@ public enum HibernateCollectionType
 	/** */
 	SET(PersistentSet.class, HashSet.class, Set.class),
 	/** */
-	SORTED_SET(PersistentSortedSet.class, TreeSet.class, Set.class),
+	SORTED_SET(PersistentSortedSet.class, TreeSet.class, SortedSet.class),
 	/** */
 	MAP(PersistentMap.class, HashMap.class, Map.class);
 
