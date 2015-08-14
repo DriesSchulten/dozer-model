@@ -8,13 +8,16 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedMap;
 import java.util.SortedSet;
+import java.util.TreeMap;
 import java.util.TreeSet;
 
 import org.hibernate.collection.internal.PersistentBag;
 import org.hibernate.collection.internal.PersistentList;
 import org.hibernate.collection.internal.PersistentMap;
 import org.hibernate.collection.internal.PersistentSet;
+import org.hibernate.collection.internal.PersistentSortedMap;
 import org.hibernate.collection.internal.PersistentSortedSet;
 import org.hibernate.collection.spi.PersistentCollection;
 import org.hibernate.engine.spi.SessionImplementor;
@@ -37,7 +40,9 @@ public enum HibernateCollectionType
 	/** */
 	SORTED_SET(PersistentSortedSet.class, TreeSet.class, SortedSet.class),
 	/** */
-	MAP(PersistentMap.class, HashMap.class, Map.class);
+	MAP(PersistentMap.class, HashMap.class, Map.class),
+	/** */
+	SORTED_MAP(PersistentSortedMap.class, TreeMap.class, SortedMap.class);
 
 	/** Logger */
 	private static final Logger LOG = LoggerFactory.getLogger(HibernateCollectionType.class);
@@ -161,6 +166,10 @@ public enum HibernateCollectionType
 		else if (sourceFieldValue.getValue() instanceof PersistentList)
 		{
 			type = HibernateCollectionType.LIST;
+		}
+		else if (sourceFieldValue.getValue() instanceof PersistentSortedMap)
+		{
+			type = HibernateCollectionType.SORTED_MAP;
 		}
 		else if (sourceFieldValue.getValue() instanceof PersistentMap)
 		{
